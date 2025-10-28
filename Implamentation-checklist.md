@@ -25,17 +25,17 @@
 
 **Meta:** Implementar login, cadastro e refresh tokens no serviço de autenticação.
 
-- [ ] Criar módulo `users` e `auth` no `apps/auth-service`
-- [ ] Implementar entity `User { id, email, username, passwordHash, createdAt }`
-- [ ] Configurar TypeORM + migrations para tabela `users`
-- [ ] Adicionar hash de senha com **bcrypt**
-- [ ] Implementar JWT (access 15 min, refresh 7 dias)
-- [ ] Endpoints:
-  - [ ] `POST /auth/register`
-  - [ ] `POST /auth/login`
-  - [ ] `POST /auth/refresh`
+- [x] Criar módulo `users` e `auth` no `apps/auth-service`
+- [x] Implementar entity `User { id, email, username, passwordHash, createdAt }`
+- [x] Configurar TypeORM + migrations para tabela `users`
+- [x] Adicionar hash de senha com **bcrypt**
+- [x] Implementar JWT (access 15 min, refresh 7 dias)
+- [x] Endpoints:
+  - [x] `POST /auth/register`
+  - [x] `POST /auth/login`
+  - [x] `POST /auth/refresh`
 - [ ] Testar fluxos via Postman (registro, login, refresh)
-- [ ] Atualizar README com instruções básicas
+- [x] Atualizar README com instruções básicas
 
 **Checkpoint:** `/auth/register` e `/auth/login` retornam tokens válidos.
 
