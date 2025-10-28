@@ -8,14 +8,14 @@
 
 **Meta:** Estruturar o monorepo e validar o ambiente base (Docker + Turborepo + comunicação).
 
-- [ ] Criar estrutura `apps/` e `packages/` conforme o enunciado (ver a estrutura sugerida no README.md na raiz do projeto)
-- [ ] Adicionar `packages/tsconfig`, `packages/eslint-config`, `packages/types`
-- [ ] Copiar o `docker-compose.yml` fornecido no teste
-- [ ] Criar `Dockerfile` básico em cada app (`web`, `api-gateway`, `auth-service`, `tasks-service`, `notifications-service`)
-- [ ] Criar `.env.example` em cada app com variáveis mínimas
-- [ ] Rodar `docker compose up --build` e garantir que todos os containers sobem
-- [ ] Validar acesso a `http://localhost:15672` (RabbitMQ UI, admin/admin)
-- [ ] Validar conexão com Postgres via `psql` ou DBeaver
+- [x] Criar estrutura `apps/` e `packages/` conforme o enunciado (ver a estrutura sugerida no README.md na raiz do projeto)
+- [x] Adicionar `packages/tsconfig`, `packages/eslint-config`, `packages/types`
+- [x] Copiar o `docker-compose.yml` fornecido no teste
+- [x] Criar `Dockerfile` básico em cada app (`web`, `api-gateway`, `auth-service`, `tasks-service`, `notifications-service`)
+- [x] Criar `.env.example` em cada app com variáveis mínimas
+- [x] Rodar `docker compose up --build` e garantir que todos os containers sobem
+- [x] Validar acesso a `http://localhost:15672` (RabbitMQ UI, admin/admin)
+- [x] Validar conexão com Postgres via `psql` ou DBeaver
 
 **Checkpoint:** Docker e containers rodando sem erros.
 
