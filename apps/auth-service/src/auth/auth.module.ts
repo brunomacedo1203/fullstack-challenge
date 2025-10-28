@@ -17,7 +17,7 @@ import { AuthService } from './auth.service';
         const expiresIn = configService.get<string>('JWT_ACCESS_TTL');
 
         return {
-          secret: configService.get<string>('JWT_ACCESS_SECRET', 'access-secret'),
+          secret: configService.get<string>('JWT_ACCESS_SECRET', 'change-me-access'),
           signOptions: {
             expiresIn: (expiresIn ?? '15m') as JwtSignOptions['expiresIn'],
           },
