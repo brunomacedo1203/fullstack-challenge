@@ -8,6 +8,28 @@ Bem‑vindo(a)! Este é um **teste prático** para a vaga de **Full‑stack Deve
 > - **Back‑end:** **Nest.js**, **TypeORM**, **RabbitMQ** (microservices Nest)
 > - **Infra/DevX:** **Docker & docker‑compose**, **Monorepo com Turborepo**
 
+## 🚀 Quick Start (Local)
+
+1. Instale as dependências do monorepo:
+   ```bash
+   npm install
+   ```
+2. Rode as checagens padrão para validar o ambiente:
+   ```bash
+   npm run check-all
+   ```
+3. Duplique cada `.env.example` para `.env` dentro dos apps em `apps/*/`.
+4. Suba a stack completa com Docker Compose:
+   ```bash
+   docker compose up --build
+   ```
+5. Acesse:
+   - Web: http://localhost:3000
+   - API Gateway: http://localhost:3001
+   - RabbitMQ UI: http://localhost:15672 (admin/admin)
+
+> Para desenvolvimento local sem Docker, use `npm run dev --workspace=<package>` em cada app.
+
 ---
 
 ## 🎯 Contexto & Objetivo

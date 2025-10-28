@@ -5,29 +5,35 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build": "echo \"No build targets yet\"",
+    "build": "turbo run build",
     "check-all": "npm run typecheck && npm run lint && npm run format:check && npm run build",
     "prepare": "husky install"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "private": "true",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": ">=20"
   },
   "packageManager": "npm@10.8.2",
   "devDependencies": {
+    "@types/node": "^24.9.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "eslint": "^9.38.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
+    "tsx": "^4.20.6",
     "turbo": "^2.5.8",
     "typescript": "^5.9.3"
   }

@@ -6,8 +6,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Build outputs
+.turbo/
 dist/
 build/
+**/dist/
+**/build/
 .turbo/
 coverage/
 
@@ -25,4 +28,3 @@ coverage/
 # Docker
 *.pid
 *.pid.lock
-

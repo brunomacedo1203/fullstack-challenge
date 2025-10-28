@@ -1,2 +1,4 @@
-// Placeholder type file so that `tsc --noEmit` has at least one input.
-// Real type packages will live here.
+// Shared types for the Jungle monorepo. Keep this file minimal until
+// packages define their own modules.
+
+export type UUID = string;

@@ -1,0 +1,10 @@
+{
+  "name": "@jungle/tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./base": "./tsconfig.base.json",
+    "./nest": "./tsconfig.nest.json",
+    "./react": "./tsconfig.react.json"
+  }
+}
