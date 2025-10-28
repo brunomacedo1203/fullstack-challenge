@@ -1,0 +1,7 @@
+{
+  "name": "@jungle/types",
+  "version": "0.0.0",
+  "private": false,
+  "type": "module",
+  "types": "index.d.ts"
+}

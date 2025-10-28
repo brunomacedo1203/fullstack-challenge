@@ -1,0 +1,30 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+.turbo/
+dist/
+build/
+**/dist/
+**/build/
+.turbo/
+coverage/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Docker
+*.pid
+*.pid.lock

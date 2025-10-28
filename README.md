@@ -4,9 +4,31 @@ Bem‑vindo(a)! Este é um **teste prático** para a vaga de **Full‑stack Deve
 
 > **Stack Obrigatória**
 >
-> * **Front‑end:** React.js + **TanStack Router**, **shadcn/ui**, **Tailwind CSS**
-> * **Back‑end:** **Nest.js**, **TypeORM**, **RabbitMQ** (microservices Nest)
-> * **Infra/DevX:** **Docker & docker‑compose**, **Monorepo com Turborepo**
+> - **Front‑end:** React.js + **TanStack Router**, **shadcn/ui**, **Tailwind CSS**
+> - **Back‑end:** **Nest.js**, **TypeORM**, **RabbitMQ** (microservices Nest)
+> - **Infra/DevX:** **Docker & docker‑compose**, **Monorepo com Turborepo**
+
+## 🚀 Quick Start (Local)
+
+1. Instale as dependências do monorepo:
+   ```bash
+   npm install
+   ```
+2. Rode as checagens padrão para validar o ambiente:
+   ```bash
+   npm run check-all
+   ```
+3. Duplique cada `.env.example` para `.env` dentro dos apps em `apps/*/`.
+4. Suba a stack completa com Docker Compose:
+   ```bash
+   docker compose up --build
+   ```
+5. Acesse:
+   - Web: http://localhost:3000
+   - API Gateway: http://localhost:3001
+   - RabbitMQ UI: http://localhost:15672 (admin/admin)
+
+> Para desenvolvimento local sem Docker, use `npm run dev --workspace=<package>` em cada app.
 
 ---
 
@@ -16,10 +38,10 @@ Construir um **Sistema de Gestão de Tarefas Colaborativo** com autenticação s
 
 **O que queremos observar:**
 
-* Organização, clareza e pragmatismo.
-* Segurança básica (hash de senha, validação de entrada).
-* Divisão de responsabilidades entre serviços.
-* Qualidade da UI e DX (developer experience).
+- Organização, clareza e pragmatismo.
+- Segurança básica (hash de senha, validação de entrada).
+- Divisão de responsabilidades entre serviços.
+- Qualidade da UI e DX (developer experience).
 
 ---
 
@@ -27,32 +49,30 @@ Construir um **Sistema de Gestão de Tarefas Colaborativo** com autenticação s
 
 ### Autenticação & Gateway
 
-* **JWT** com **cadastro/login** (email, username, password) e **proteção de rotas no API Gateway**.
-* **Hash de senha** com **bcrypt** (ou argon2).
-* **Tokens:** `accessToken` (15 min) e `refreshToken` (7 dias) + **endpoint de refresh**.
-* **Swagger/OpenAPI** exposto no Gateway.
+- **JWT** com **cadastro/login** (email, username, password) e **proteção de rotas no API Gateway**.
+- **Hash de senha** com **bcrypt** (ou argon2).
+- **Tokens:** `accessToken` (15 min) e `refreshToken` (7 dias) + **endpoint de refresh**.
+- **Swagger/OpenAPI** exposto no Gateway.
 
 ### Tarefas (inclui comentários e histórico)
 
-* **CRUD completo** com campos: **título**, **descrição**, **prazo**, **prioridade** (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) e **status** (`TODO`, `IN_PROGRESS`, `REVIEW`, `DONE`).
-* **Atribuição a múltiplos usuários**.
-* **Comentários**: criar e listar em cada tarefa.
-* **Histórico de alterações** (audit log simplificado).
+- **CRUD completo** com campos: **título**, **descrição**, **prazo**, **prioridade** (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) e **status** (`TODO`, `IN_PROGRESS`, `REVIEW`, `DONE`).
+- **Atribuição a múltiplos usuários**.
+- **Comentários**: criar e listar em cada tarefa.
+- **Histórico de alterações** (audit log simplificado).
 
 ### Notificações & Tempo Real
 
-* Ao **criar/atualizar/comentar** uma tarefa, **publicar evento** no broker (**RabbitMQ**).
-* Serviço de **notifications** consome da fila, **persiste** e **entrega via WebSocket**.
-* WebSocket notifica quando:
-
-  * a tarefa é **atribuída** ao usuário;
-  * o **status** da tarefa muda;
-  * há **novo comentário** em tarefa da qual participa.
+- Ao **criar/atualizar/comentar** uma tarefa, **publicar evento** no broker (**RabbitMQ**).
+- Serviço de **notifications** consome da fila, **persiste** e **entrega via WebSocket**.
+- WebSocket notifica quando:
+  - a tarefa é **atribuída** ao usuário;
+  - o **status** da tarefa muda;
+  - há **novo comentário** em tarefa da qual participa.
 
 ### Docker
 
-* **Obrigatório subir tudo com Docker Compose** (serviços do app, broker, dbs, etc.).
-
+- **Obrigatório subir tudo com Docker Compose** (serviços do app, broker, dbs, etc.).
 
 ## ⚡ HTTP Endpoints & WebSocket Events
 
@@ -75,9 +95,9 @@ GET    /api/tasks/:id/comments?page=&size   # lista de comentários com paginaç
 
 ### WebSocket Events
 
-* `task:created` – tarefa foi criada
-* `task:updated` – tarefa foi atualizada
-* `comment:new` – novo comentário
+- `task:created` – tarefa foi criada
+- `task:updated` – tarefa foi atualizada
+- `comment:new` – novo comentário
 
 ---
 
@@ -86,39 +106,39 @@ GET    /api/tasks/:id/comments?page=&size   # lista de comentários com paginaç
 ```
 .
 ├── apps/
-│   ├── web/                     
+│   ├── web/
 │   │   ├── src/                  # React + TanStack Router + shadcn + Tailwind
-│   │   ├── Dockerfile   
+│   │   ├── Dockerfile
 │   │   ├── .env.example          # variáveis de ambiente do frontend
-│   │   ├── package.json              
-│   ├── api-gateway/   
+│   │   ├── package.json
+│   ├── api-gateway/
 │   │   ├── src/                  # HTTP + WebSocket + Swagger
 │   │   ├── Dockerfile
 │   │   ├── .env.example          # variáveis do API Gateway (Nest.js)
 │   │   ├── package.json
-│   ├── auth-service/            
+│   ├── auth-service/
 │   │   ├── src/                  # Nest.js (microserviço de autenticação)
 │   │   ├── migrations/
 │   │   ├── Dockerfile
 │   │   ├── .env.example          # variáveis do serviço de autenticação
 │   │   ├── package.json
-│   ├── tasks-service/   
+│   ├── tasks-service/
 │   │   ├── src/                  # Nest.js (microserviço RabbitMQ)
 │   │   ├── migrations/
-│   │   ├── Dockerfile        
+│   │   ├── Dockerfile
 │   │   ├── .env.example          # variáveis do serviço de tarefas
 │   │   ├── package.json
-│   └── notifications-service/   
+│   └── notifications-service/
 │       ├── src/                  # Nest.js (microserviço RabbitMQ + WebSocket)
 │       ├── migrations/
 │       ├── Dockerfile
 │       ├── .env.example          # variáveis do serviço de notificações
-│       ├── package.json                
+│       ├── package.json
 ├── packages/
-│   ├── types/                   
-│   ├── utils/                   
-│   ├── eslint-config/           
-│   └── tsconfig/                
+│   ├── types/
+│   ├── utils/
+│   ├── eslint-config/
+│   └── tsconfig/
 ├── docker-compose.yml
 ├── turbo.json
 ├── package.json
@@ -129,16 +149,16 @@ GET    /api/tasks/:id/comments?page=&size   # lista de comentários com paginaç
 
 ## 🧭 Front-end (exigências)
 
-* **React.js** com **TanStack Router**.
-* **UI:** mínimo 5 componentes com **shadcn/ui** + **Tailwind CSS**.
-* **Páginas obrigatórias:**
-  * Login/Register com validação (Pode ser um modal)
-  * Lista de tarefas com filtros e busca
-  * Detalhe da tarefa com comentários
-* **Estado:** Context API ou Zustand para auth.
-* **WebSocket:** conexão para notificações em tempo real.
-* **Validação:** `react-hook-form` + `zod`.
-* **Loading/Error:** Skeleton loaders (shimmer effect) e toast notifications.
+- **React.js** com **TanStack Router**.
+- **UI:** mínimo 5 componentes com **shadcn/ui** + **Tailwind CSS**.
+- **Páginas obrigatórias:**
+  - Login/Register com validação (Pode ser um modal)
+  - Lista de tarefas com filtros e busca
+  - Detalhe da tarefa com comentários
+- **Estado:** Context API ou Zustand para auth.
+- **WebSocket:** conexão para notificações em tempo real.
+- **Validação:** `react-hook-form` + `zod`.
+- **Loading/Error:** Skeleton loaders (shimmer effect) e toast notifications.
 
 > **Diferencial:** TanStack Query.
 
@@ -146,14 +166,14 @@ GET    /api/tasks/:id/comments?page=&size   # lista de comentários com paginaç
 
 ## 🛠️ Back-end (exigências)
 
-* **Nest.js** com **TypeORM** (PostgreSQL).
-* **JWT** com Guards e estratégias Passport.
-* **Swagger** completo no Gateway (`/api/docs`).
-* **DTOs** com `class-validator` e `class-transformer`.
-* **Microserviços** Nest.js com **RabbitMQ**.
-* **WebSocket** Gateway para eventos real-time.
-* **Migrations** com TypeORM.
-* **Rate limiting** no API Gateway (10 req/seg).
+- **Nest.js** com **TypeORM** (PostgreSQL).
+- **JWT** com Guards e estratégias Passport.
+- **Swagger** completo no Gateway (`/api/docs`).
+- **DTOs** com `class-validator` e `class-transformer`.
+- **Microserviços** Nest.js com **RabbitMQ**.
+- **WebSocket** Gateway para eventos real-time.
+- **Migrations** com TypeORM.
+- **Rate limiting** no API Gateway (10 req/seg).
 
 > **Diferencial:** health checks, Logging com Winston ou Pino, testes unitários.
 
@@ -344,8 +364,8 @@ Para auxiliar no desenvolvimento deste desafio, disponibilizamos alguns conteúd
 
 ### Vídeos Recomendados
 
-* **[Autenticação centralizada em microsserviços NestJS](https://www.youtube.com/watch?v=iiSTB0btEgA)** - Como implementar autenticação centralizada em uma arquitetura de microsserviços usando NestJS.
-* **[Tutorial de Microservices com Nest.js em 20 Minutos](https://www.youtube.com/watch?v=C250DCwS81Q)** - Passo a passo rápido para criar e conectar microsserviços no NestJS.
+- **[Autenticação centralizada em microsserviços NestJS](https://www.youtube.com/watch?v=iiSTB0btEgA)** - Como implementar autenticação centralizada em uma arquitetura de microsserviços usando NestJS.
+- **[Tutorial de Microservices com Nest.js em 20 Minutos](https://www.youtube.com/watch?v=C250DCwS81Q)** - Passo a passo rápido para criar e conectar microsserviços no NestJS.
 
 Estes materiais são sugestões para apoiar seu desenvolvimento, mas sinta-se livre para buscar outras referências que julgar necessárias.
 
@@ -371,8 +391,8 @@ Não. TypeORM é requisito obrigatório.
 
 Caso tenha alguma dúvida sobre o teste ou precise de esclarecimentos:
 
-* Entre em contato com o **recrutador que enviou este teste**
-* Ou envie um e-mail para: **recruitment@junglegaming.io**
+- Entre em contato com o **recrutador que enviou este teste**
+- Ou envie um e-mail para: **recruitment@junglegaming.io**
 
 Responderemos o mais breve possível para garantir que você tenha todas as informações necessárias para realizar o desafio.
 
@@ -380,14 +400,14 @@ Responderemos o mais breve possível para garantir que você tenha todas as info
 
 ## 🕒 Prazo
 
-* **Entrega:** 14 dias corridos a partir do recebimento
+- **Entrega:** 14 dias corridos a partir do recebimento
 
 ---
 
 ## 💡 Dicas Finais
 
-* **Comece pelo básico:** Auth → CRUD → RabbitMQ → WebSocket.
-* **Logs claros:** Facilita debug do fluxo assíncrono.
+- **Comece pelo básico:** Auth → CRUD → RabbitMQ → WebSocket.
+- **Logs claros:** Facilita debug do fluxo assíncrono.
 
 ---
 
