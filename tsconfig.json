@@ -1,5 +1,5 @@
 {
-  "extends": "@jungle/tsconfig/base",
+  "extends": "./packages/tsconfig/tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true
   },

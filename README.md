@@ -32,6 +32,26 @@ Bem‑vindo(a)! Este é um **teste prático** para a vaga de **Full‑stack Deve
 
 ---
 
+## 🔐 Auth Service (NestJS)
+
+- Desenvolvimento local: `npm run dev --workspace=@jungle/auth-service`
+- Build/Start (prod-like): `npm run build --workspace=@jungle/auth-service && npm run start --workspace=@jungle/auth-service`
+- Executar migrations:
+  ```bash
+  npm run migration:run --workspace=@jungle/auth-service
+  ```
+- Variáveis de ambiente principais (`apps/auth-service/.env.example`):
+  - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME`
+  - `JWT_ACCESS_SECRET`, `JWT_ACCESS_TTL` (default `15m`)
+  - `JWT_REFRESH_SECRET`, `JWT_REFRESH_TTL` (default `7d`)
+  - `BCRYPT_SALT_ROUNDS` (default `10`)
+- Endpoints expostos diretamente pelo serviço:
+  - `POST /auth/register`
+  - `POST /auth/login`
+  - `POST /auth/refresh`
+
+---
+
 ## 🎯 Contexto & Objetivo
 
 Construir um **Sistema de Gestão de Tarefas Colaborativo** com autenticação simples, CRUD de tarefas, comentários, atribuição e notificações. O sistema deve rodar em **monorepo** e expor uma **UI** limpa, responsiva e usável. O back‑end deve ser composto por **microserviços Nest** que se comunicam via **RabbitMQ**; o acesso HTTP externo passa por um **API Gateway** (Nest HTTP).
