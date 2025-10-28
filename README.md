@@ -48,7 +48,25 @@ Bem‑vindo(a)! Este é um **teste prático** para a vaga de **Full‑stack Deve
 - Endpoints expostos diretamente pelo serviço:
   - `POST /auth/register`
   - `POST /auth/login`
-  - `POST /auth/refresh`
+- `POST /auth/refresh`
+
+---
+
+## 🌐 API Gateway (NestJS)
+
+- Desenvolvimento local: `npm run dev --workspace=@jungle/api-gateway`
+- Build/Start (prod-like): `npm run build --workspace=@jungle/api-gateway && npm run start --workspace=@jungle/api-gateway`
+- Variáveis chave (`apps/api-gateway/.env.example`):
+  - `AUTH_SERVICE_URL`, `TASKS_SERVICE_URL`, `NOTIFICATIONS_SERVICE_URL`
+  - `JWT_ACCESS_SECRET` (deve bater com o auth-service)
+  - `HTTP_TIMEOUT_MS` (timeout padrão nas chamadas HTTP downstream)
+- Recursos:
+  - Swagger: http://localhost:3001/api/docs
+  - Rotas proxy:
+    - `POST /api/auth/register`
+    - `POST /api/auth/login`
+    - `POST /api/auth/refresh`
+    - `GET/POST/PUT/DELETE /api/tasks*` (protegidas por JWT)
 
 ---
 
