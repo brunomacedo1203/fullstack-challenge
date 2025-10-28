@@ -46,20 +46,23 @@ Sempre use este formato:
 ```
 
 ### Tipos válidos
-| Tipo | Quando usar |
-|------|--------------|
-| `feat` | Nova funcionalidade |
-| `fix` | Correção de bug |
-| `chore` | Setup, dependências ou scripts |
-| `docs` | Atualização de documentação |
+
+| Tipo       | Quando usar                            |
+| ---------- | -------------------------------------- |
+| `feat`     | Nova funcionalidade                    |
+| `fix`      | Correção de bug                        |
+| `chore`    | Setup, dependências ou scripts         |
+| `docs`     | Atualização de documentação            |
 | `refactor` | Reestruturação sem mudar comportamento |
 
 **Regras:**
+
 - Mensagem curta (máx. 72 caracteres).
 - Sempre em inglês, no imperativo (“add”, “create”, “fix”, “update”).
 - O Codex **deve sugerir o comando completo** (com `git add` e `git commit`) ao final de cada task concluída.
 
 > ✅ Exemplo:
+>
 > ```bash
 > git add .
 > git commit -m "feat(auth): implement JWT login and refresh logic"
@@ -70,12 +73,14 @@ Sempre use este formato:
 ## 🔁 FLUXO DIÁRIO PADRÃO
 
 1. **Atualizar branch principal**
+
    ```bash
    git checkout main
    git pull origin main
    ```
 
 2. **Criar branch do dia**
+
    ```bash
    git checkout -b feature/day-1-setup
    ```
@@ -122,12 +127,14 @@ Se algum desses comandos falhar, **não sugerir commit** até que o problema sej
 ## 🧩 ORIENTAÇÕES DE PADRONIZAÇÃO
 
 ### Estrutura de código
+
 - Pastas e arquivos → `kebab-case`
 - Classes → `PascalCase`
 - Variáveis e funções → `camelCase`
 - Constantes → `UPPER_SNAKE_CASE`
 
 ### Formatação
+
 - Sempre rodar:
   ```bash
   npx eslint . --fix
@@ -135,48 +142,55 @@ Se algum desses comandos falhar, **não sugerir commit** até que o problema sej
   ```
 
 ### Branches
-| Prefixo | Uso |
-|----------|------|
-| `feature/` | nova feature / dia |
-| `fix/` | correções |
-| `chore/` | setup, scripts, infra |
-| `docs/` | documentação |
-| `refactor/` | melhorias de código |
+
+| Prefixo     | Uso                   |
+| ----------- | --------------------- |
+| `feature/`  | nova feature / dia    |
+| `fix/`      | correções             |
+| `chore/`    | setup, scripts, infra |
+| `docs/`     | documentação          |
+| `refactor/` | melhorias de código   |
 
 ---
 
 ## 🧰 COMANDOS ÚTEIS
 
 ### 🐳 Docker
-| Ação | Comando |
-|------|----------|
-| Subir containers | `docker compose up --build` |
-| Parar containers | `docker compose down` |
-| Remover volumes | `docker compose down -v --remove-orphans` |
-| Logs | `docker logs -f nome-do-container` |
-| Reconstruir serviço | `docker compose up --build api-gateway` |
+
+| Ação                | Comando                                   |
+| ------------------- | ----------------------------------------- |
+| Subir containers    | `docker compose up --build`               |
+| Parar containers    | `docker compose down`                     |
+| Remover volumes     | `docker compose down -v --remove-orphans` |
+| Logs                | `docker compose logs -f <servico>`        |
+| Reconstruir serviço | `docker compose up -d --build <servico>`  |
 
 ### ⚙️ Turbo e Node
-| Ação | Comando |
-|------|----------|
-| Rodar todos os apps | `turbo run dev --parallel` |
-| Rodar build global | `turbo run build` |
-| Limpar cache | `turbo prune` |
+
+| Ação                       | Comando                                   |
+| -------------------------- | ----------------------------------------- |
+| Rodar todos os apps        | `turbo run dev --parallel`                |
+| Rodar build global         | `turbo run build`                         |
+| Forçar rebuild (sem cache) | `turbo run build --force`                 |
+| Limpar cache local         | `rm -rf .turbo node_modules/.cache/turbo` |
 
 ### 🧪 Verificações
-| Ação | Comando |
-|------|----------|
-| Checar tipos | `npx tsc --noEmit` |
-| Lint | `npx eslint . --fix` |
-| Prettier | `npx prettier --write .` |
+
+| Ação              | Comando                  |
+| ----------------- | ------------------------ |
+| Checar tipos      | `npx tsc --noEmit`       |
+| Lint              | `npx eslint . --fix`     |
+| Prettier          | `npx prettier --write .` |
+| Rodar tudo (root) | `npm run check-all`      |
 
 ### 💾 Git
-| Ação | Comando |
-|------|----------|
-| Criar branch | `git checkout -b feature/day-x` |
-| Atualizar main | `git pull origin main` |
-| Enviar branch | `git push origin feature/day-x` |
-| Histórico | `git log --oneline --graph --decorate` |
+
+| Ação           | Comando                                |
+| -------------- | -------------------------------------- |
+| Criar branch   | `git checkout -b feature/day-x`        |
+| Atualizar main | `git pull origin main`                 |
+| Enviar branch  | `git push origin feature/day-x`        |
+| Histórico      | `git log --oneline --graph --decorate` |
 
 ---
 
@@ -195,10 +209,13 @@ Se algum desses comandos falhar, **não sugerir commit** até que o problema sej
 
 > ✅ Task concluída: Implementar CRUD básico de tarefas  
 > Antes de commitar, rode:
+>
 > ```bash
 > npx tsc --noEmit && npx eslint . && turbo run build
 > ```
+>
 > Se tudo estiver ok, use:
+>
 > ```bash
 > git add .
 > git commit -m "feat(tasks): implement basic CRUD endpoints"
@@ -208,10 +225,10 @@ Se algum desses comandos falhar, **não sugerir commit** até que o problema sej
 
 ## 📘 AUTOR E CONTEXTO
 
-- **Autor:** Bruno Macedo  
-- **Projeto:** Jungle Gaming Fullstack Challenge  
-- **Ambiente:** VS Code + WSL Ubuntu  
-- **Stack:** React.js + NestJS + TypeORM + RabbitMQ + Docker + Turborepo  
-- **Data de referência:** Outubro/2025  
+- **Autor:** Bruno Macedo
+- **Projeto:** Jungle Gaming Fullstack Challenge
+- **Ambiente:** VS Code + WSL Ubuntu
+- **Stack:** React.js + NestJS + TypeORM + RabbitMQ + Docker + Turborepo
+- **Data de referência:** Outubro/2025
 
-> 🧠 *"Clean code and clean history are better than any single feature."*
+> 🧠 _"Clean code and clean history are better than any single feature."_
