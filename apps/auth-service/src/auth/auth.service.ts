@@ -130,7 +130,7 @@ export class AuthService {
   }
 
   private getAccessSecret(): string {
-    return this.configService.get<string>('JWT_ACCESS_SECRET', 'access-secret');
+    return this.configService.get<string>('JWT_ACCESS_SECRET', 'change-me-access');
   }
 
   private getRefreshSecret(): string {

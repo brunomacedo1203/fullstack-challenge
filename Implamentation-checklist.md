@@ -34,7 +34,7 @@
   - [x] `POST /auth/register`
   - [x] `POST /auth/login`
   - [x] `POST /auth/refresh`
-- [ ] Testar fluxos via Postman (registro, login, refresh)
+- [x] Testar fluxos via Postman (registro, login, refresh)
 - [x] Atualizar README com instruções básicas
 
 **Checkpoint:** `/auth/register` e `/auth/login` retornam tokens válidos.
@@ -45,12 +45,12 @@
 
 **Meta:** Centralizar autenticação e aplicar segurança (Guards, Swagger, Rate-limit).
 
-- [ ] Criar `apps/api-gateway` com módulos `auth` e `tasks` (controllers proxy)
-- [ ] Integrar com **auth-service** (rotas de login/register/refresh)
-- [ ] Implementar Guard JWT para rotas `/api/tasks*`
-- [ ] Adicionar **Swagger** em `/api/docs`
-- [ ] Adicionar **rate limiting** (10 req/s)
-- [ ] Validar login completo via Gateway
+- [x] Criar `apps/api-gateway` com módulos `auth` e `tasks` (controllers proxy)
+- [x] Integrar com **auth-service** (rotas de login/register/refresh)
+- [x] Implementar Guard JWT para rotas `/api/tasks*`
+- [x] Adicionar **Swagger** em `/api/docs`
+- [x] Adicionar **rate limiting** (10 req/s)
+- [x] Validar login completo via Gateway
 
 **Checkpoint:** Swagger exibe os 3 endpoints de auth; login funciona via Gateway.
 
