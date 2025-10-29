@@ -63,52 +63,52 @@
 ### 🔹 Subtasks
 
 1. **Setup inicial**
-   - [ ] Criar módulo `tasks` em `apps/tasks-service`.
-   - [ ] Configurar TypeORM e `ConfigModule`.
+   - [x] Criar módulo `tasks` em `apps/tasks-service`.
+   - [x] Configurar TypeORM e `ConfigModule`.
    - **Commit:**
      ```bash
      git commit -m "feat(tasks-service): initial setup and module creation"
      ```
 
 2. **Entities e DTOs**
-   - [ ] Criar `Task` e `TaskAssignee`.
-   - [ ] Criar DTOs `CreateTaskDto`, `UpdateTaskDto`.
+   - [x] Criar `Task` e `TaskAssignee`.
+   - [x] Criar DTOs `CreateTaskDto`, `UpdateTaskDto`.
    - **Commit:**
      ```bash
      git commit -m "feat(tasks-service): add Task and TaskAssignee entities and DTOs"
      ```
 
 3. **CRUD interno**
-   - [ ] Implementar endpoints internos:
+   - [x] Implementar endpoints internos:
      - `GET /tasks?page=&size=`
      - `POST /tasks`
      - `GET /tasks/:id`
      - `PUT /tasks/:id`
      - `DELETE /tasks/:id`
-   - [ ] Paginação e validações.
+   - [x] Paginação e validações.
    - **Commit:**
      ```bash
      git commit -m "feat(tasks-service): implement CRUD and pagination"
      ```
 
 4. **Integração com Gateway**
-   - [ ] Proxies equivalentes sob `/api/tasks*`.
-   - [ ] Testar com JWT.
+   - [x] Proxies equivalentes sob `/api/tasks*`.
+   - [x] Testar com JWT.
    - **Commit:**
      ```bash
      git commit -m "feat(api-gateway): proxy task routes and JWT validation"
      ```
 
 5. **Migrations e teste**
-   - [ ] Criar migrations (`tasks`, `task_assignees`).
-   - [ ] Testar CRUD via Gateway.
+   - [x] Criar migrations (`tasks`, `task_assignees`).
+   - [x] Testar CRUD via Gateway.
    - **Commit:**
      ```bash
      git commit -m "chore(tasks-service): add migrations and validate CRUD"
      ```
 
 6. **Docs**
-   - [ ] Atualizar checklist e README.
+   - [x] Atualizar checklist.
    - **Commit:**
      ```bash
      git commit -m "docs(tasks-service): update checklist and instructions"
