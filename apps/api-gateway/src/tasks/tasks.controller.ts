@@ -17,6 +17,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TasksProxyService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { ListTasksQueryDto } from './dto/list-tasks.query.dto';
+import { ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('tasks')
 @ApiBearerAuth()
@@ -26,7 +28,19 @@ export class TasksController {
   constructor(private readonly tasksProxy: TasksProxyService) {}
 
   @Get()
-  list(@Query() query: Record<string, unknown>, @Req() req: Request): Promise<unknown> {
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Página (default 1)',
+    schema: { type: 'integer', minimum: 1, example: 1 },
+  })
+  @ApiQuery({
+    name: 'size',
+    required: false,
+    description: 'Tamanho da página (default 10, max 100)',
+    schema: { type: 'integer', minimum: 1, maximum: 100, example: 10 },
+  })
+  list(@Query() query: ListTasksQueryDto, @Req() req: Request): Promise<unknown> {
     return this.tasksProxy.list(query, req.headers.authorization);
   }
 

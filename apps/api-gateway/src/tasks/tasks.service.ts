@@ -15,7 +15,7 @@ export class TasksProxyService {
     this.baseUrl = configService.get<string>('TASKS_SERVICE_URL', 'http://tasks-service:3003');
   }
 
-  list(params: Record<string, unknown>, authorization?: string): Promise<unknown> {
+  list(params: unknown, authorization?: string): Promise<unknown> {
     return this.forward('get', '/tasks', { params, authorization });
   }
 
@@ -38,7 +38,7 @@ export class TasksProxyService {
   private async forward(
     method: 'get' | 'post' | 'put' | 'delete',
     path: string,
-    options: { params?: Record<string, unknown>; body?: unknown; authorization?: string },
+    options: { params?: unknown; body?: unknown; authorization?: string },
   ): Promise<unknown> {
     const headers = options.authorization ? { Authorization: options.authorization } : undefined;
 
