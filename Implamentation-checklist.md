@@ -201,10 +201,10 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
    - **Commit:** `feat(notifications-service): scaffold service and env config`
 
 2. **Fase 2 — Consumer RabbitMQ (fila e bindings)**
-   - [ ] Declarar fila durável `notifications.q` (ou valor de `NOTIFS_QUEUE`).
-   - [ ] Bind ao exchange `tasks.events` com `task.*` (ou `task.#`).
-   - [ ] Configurar `prefetch(10)` e ACK manual; DLX `tasks.dlx` + `notifications.dlq` (opcional).
-   - [ ] Logar mensagens recebidas (routingKey + payload resumido).
+   - [x] Declarar fila durável `notifications.q` (ou valor de `NOTIFS_QUEUE`).
+   - [x] Bind ao exchange `tasks.events` com `task.*` (ou `task.#`).
+   - [x] Configurar `prefetch(10)` e ACK manual; DLX `tasks.dlx` + `notifications.dlq` (opcional).
+   - [x] Logar mensagens recebidas (routingKey + payload resumido).
    - **Commit:** `feat(notifications-service): setup RabbitMQ consumer`
 
 _Checkpoint:_ Fila ligada e consumo visível na RabbitMQ UI.
