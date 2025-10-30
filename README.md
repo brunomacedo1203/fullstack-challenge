@@ -209,6 +209,8 @@ Regras principais e integrações:
 
 ---
 
+## 🗓️ DIA 4 – Estrutura Base
+
 ### 🖼️ **Figura 1 – Estrutura geral do banco (Dia 4)**
 
 Visão geral das tabelas criadas até o final do Dia 4 (`users`, `tasks`, `task_assignees`, `migrations`).
@@ -248,15 +250,9 @@ Documentação dos endpoints antes da inclusão de comentários e eventos.
 
 ![Figura 5 – Swagger (Dia 4)](./docs/images/swagger%20dia%204.png)
 
-### 🖼️ **Figura 6 – Swagger (Dia 5)**
-
-Swagger com os novos endpoints de comentários e descrições atualizadas.
-
-![Figura 6 – Swagger (Dia 5)](./docs/images/swagger%20dia%205.png)
-
 ---
 
-## 🧱 Evolução após as migrations do Dia 5 (Tasks Events)
+## 🗓️ DIA 5 – Comentários, Histórico e Eventos
 
 Com a implementação do **Tasks Service (Parte 2)**, o banco foi expandido para incluir comentários e histórico de eventos.  
 As novas tabelas `comments` e `task_history` suportam o registro de interações e auditoria no contexto das tarefas.
@@ -268,38 +264,46 @@ As novas tabelas `comments` e `task_history` suportam o registro de interações
 
 ---
 
-### 🖼️ **Figura 5 – Estrutura geral do banco (Dia 5)**
+### 🖼️ **Figura 6 – Swagger (Dia 5)**
+
+Swagger com os novos endpoints de comentários e descrições atualizadas.
+
+![Figura 6 – Swagger (Dia 5)](./docs/images/swagger%20dia%205.png)
+
+---
+
+### 🖼️ **Figura 7 – Estrutura geral do banco (Dia 5)**
 
 Visão atualizada do schema `challenge_db` após as migrations do Dia 5.  
 Mostra as novas tabelas `comments` e `task_history` integradas ao conjunto existente (`tasks`, `users`, `task_assignees`).
 
-![Figura 5 – Estrutura geral do banco (Dia 5)](./docs/images/db-figure-5-dia5.png)
+![Figura 7 – Estrutura geral do banco (Dia 5)](./docs/images/db-figure-5-dia5.png)
 
 ---
 
-### 🖼️ **Figura 6 – Estrutura detalhada da tabela `comments`**
+### 🖼️ **Figura 8 – Estrutura detalhada da tabela `comments`**
 
 Campos da tabela `comments`, incluindo o relacionamento com a tarefa (`task_id`) e o autor (`author_id`), além do conteúdo e data de criação.
 
-![Figura 6 – Estrutura da tabela comments](./docs/images/db-figure-6-comments.png)
+![Figura 8 – Estrutura da tabela comments](./docs/images/db-figure-6-comments.png)
 
 ---
 
-### 🖼️ **Figura 7 – Estrutura detalhada da tabela `task_history`**
+### 🖼️ **Figura 9 – Estrutura detalhada da tabela `task_history`**
 
 Tabela de histórico de eventos (`task_history`) com os campos `actor_id`, `type`, `payload` e `created_at`.  
 Usada para auditoria e registro de alterações ou comentários em tarefas.
 
-![Figura 7 – Estrutura da tabela task_history](./docs/images/db-figure-7-history.png)
+![Figura 9 – Estrutura da tabela task_history](./docs/images/db-figure-7-history.png)
 
 ---
 
-### 🖼️ **Figura 8 – Relações entre tabelas (ER Diagram – Dia 5)**
+### 🖼️ **Figura 10 – Relações entre tabelas (ER Diagram – Dia 5)**
 
 Diagrama Entidade-Relacionamento atualizado, mostrando as conexões entre todas as tabelas (`users`, `tasks`, `comments`, `task_history`, `task_assignees`, `migrations`).  
 Evidencia a evolução do schema após o Dia 5, com as novas entidades conectadas ao modelo existente.
 
-![Figura 8 – ER Diagram – Dia 5](./docs/images/db-figure-8-er-dia5.png)
+![Figura 10 – ER Diagram – Dia 5](./docs/images/db-figure-8-er-dia5.png)
 
 ---
 
