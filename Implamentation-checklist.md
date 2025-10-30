@@ -176,8 +176,8 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
    - [x] Verificar mensagens na RabbitMQ UI (`tasks.events`).
    - **Commit:** `chore(tasks-service): validate comments and events end-to-end`
 
-7. **Fase 7 — Documentação**
-   - [ ] Atualizar README e checklist com novas rotas/eventos.
+7. **Fase 7 — Documentação** _(concluída)_
+   - [x] Atualizar README e checklist com novas rotas/eventos.
    - **Commit:** `docs: document task events and comments`
 
 ---

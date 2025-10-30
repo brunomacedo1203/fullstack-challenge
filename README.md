@@ -77,6 +77,8 @@ cp apps/<app>/.env.example apps/<app>/.env
 
 Valores padrão (local/dev) já funcionam com o `docker-compose.yml` presente na raiz.
 
+- `apps/tasks-service/.env` agora traz `TASKS_EVENTS_EXCHANGE` (default `tasks.events`) apontando para o exchange usado nos eventos de tarefas.
+
 ---
 
 ### 4️⃣ Subir toda a stack
@@ -146,29 +148,49 @@ npm run build --workspace=@jungle/tasks-service
 
 ---
 
-### Tasks Service (Dia 4)
+### Tasks Service (Dias 4 e 5)
 
-| Endpoint                 | Protegido | Observações                                             |
-| ------------------------ | --------- | ------------------------------------------------------- |
-| `GET /api/tasks`         | ✅        | Paginação (`page`, `size`), ordenação desc por criação  |
-| `POST /api/tasks`        | ✅        | Valida título, status, prioridade, `assigneeIds` únicos |
-| `GET /api/tasks/{id}`    | ✅        | Usa `ParseUUIDPipe` (400 p/ UUID inválido)              |
-| `PUT /api/tasks/{id}`    | ✅        | Transação: atualiza task + atribuições de forma atômica |
-| `DELETE /api/tasks/{id}` | ✅        | Remove tarefa e cascade nas atribuições                 |
+| Endpoint                        | Protegido | Observações                                                                                        |
+| ------------------------------- | --------- | -------------------------------------------------------------------------------------------------- |
+| `GET /api/tasks`                | ✅        | Paginação (`page`, `size`), ordenação desc por criação                                             |
+| `POST /api/tasks`               | ✅        | Valida título, status, prioridade, `assigneeIds` únicos; registra histórico e publica evento       |
+| `GET /api/tasks/{id}`           | ✅        | Usa `ParseUUIDPipe`; inclui `X-User-Id` para auditoria                                             |
+| `PUT /api/tasks/{id}`           | ✅        | Transação + diff de alterações; histórico `TASK_UPDATED`; evento `task.updated`                    |
+| `DELETE /api/tasks/{id}`        | ✅        | Remove tarefa (cascade em assignees)                                                               |
+| `GET /api/tasks/{id}/comments`  | ✅        | Lista comentários com paginação (`page`, `size`) e ordenação desc por `createdAt`                  |
+| `POST /api/tasks/{id}/comments` | ✅        | Cria comentário usando o usuário autenticado (`X-User-Id`) como autor; histórico `COMMENT_CREATED` |
 
-Regras principais:
+Regras principais e integrações:
 
-- `assigneeIds` deduplicados (duplicatas → 400).
-- Transações garantem consistência entre `tasks` e `task_assignees`.
-- `dueDate` validado e convertido para `Date`.
-- Respostas padronizadas com metadados (`page`, `size`, `total`).
+- `assigneeIds` deduplicados → duplicatas geram 400.
+- Todas as operações críticas ocorrem dentro de transações TypeORM (consistência entre `tasks`, `task_assignees`, `comments` e `task_history`).
+- `X-User-Id` é propagado pelo Gateway (valor do `sub` no JWT) e utilizado como `actorId` e `authorId` no tasks-service.
+- `task_history` registra `TASK_CREATED`, `TASK_UPDATED` (com `changedFields`) e `COMMENT_CREATED`.
+- Respostas de listagem padronizadas: `{ data, page, size, total }`.
 
----
+### RabbitMQ & Eventos
 
-### RabbitMQ & Notifications
+- Exchange padrão: `tasks.events` (configurável via `TASKS_EVENTS_EXCHANGE`).
+- Eventos publicados:
+  - `task.created`
+  - `task.updated`
+  - `task.comment.created`
+- Payload inclui `actorId` quando disponível e snapshots normalizados (datas em ISO 8601 / UTC).
+- **Inspecionar rapidamente via CLI:**
 
-- RabbitMQ operacional e acessível via UI (`admin/admin`)
-- Publicação de eventos (`task.created`, `task.updated`, `task.comment.created`) e WebSocket de notificações serão adicionados no Dia 5+
+  ```bash
+  # criar fila efêmera e bindar todos os eventos
+  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin declare queue name=debug-tasks-events durable=false
+  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin declare binding source=tasks.events destination=debug-tasks-events routing_key='#'
+
+  # consumir mensagens
+  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin get queue=debug-tasks-events count=10
+
+  # remover fila ao terminar
+  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin delete queue name=debug-tasks-events
+  ```
+
+- Notifications/WebSocket permanecem planejados para o Dia 6.
 
 ---
 
