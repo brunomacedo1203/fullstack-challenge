@@ -26,9 +26,7 @@ export type TaskResponse = {
 
 @Injectable()
 export class TasksService {
-  constructor(
-    @InjectRepository(Task) private readonly tasksRepo: Repository<Task>,
-  ) {}
+  constructor(@InjectRepository(Task) private readonly tasksRepo: Repository<Task>) {}
 
   async list(page = 1, size = 10): Promise<Paginated<TaskResponse>> {
     const take = Math.max(1, Math.min(100, size));

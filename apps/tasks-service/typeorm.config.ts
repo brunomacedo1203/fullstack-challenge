@@ -24,7 +24,5 @@ export default new DataSource({
   password: configService.get<string>('DATABASE_PASSWORD', 'password'),
   database: configService.get<string>('DATABASE_NAME', 'challenge_db'),
   entities: [Task, TaskAssignee],
-  migrations: isProd
-    ? [join(__dirname, 'migrations/*.js')]
-    : [join(__dirname, 'migrations/*.ts')],
+  migrations: isProd ? [join(__dirname, 'migrations/*.js')] : [join(__dirname, 'migrations/*.ts')],
 });

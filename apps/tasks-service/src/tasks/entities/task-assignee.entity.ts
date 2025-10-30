@@ -17,4 +17,3 @@ export class TaskAssignee {
   @Column({ name: 'assigned_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   assignedAt!: Date;
 }
-

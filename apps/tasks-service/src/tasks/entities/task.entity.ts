@@ -38,10 +38,20 @@ export class Task {
   @Column({ name: 'due_date', type: 'timestamp', nullable: true })
   dueDate?: Date | null;
 
-  @Column({ type: 'enum', enum: TaskPriority, enumName: 'task_priority_enum', default: TaskPriority.MEDIUM })
+  @Column({
+    type: 'enum',
+    enum: TaskPriority,
+    enumName: 'task_priority_enum',
+    default: TaskPriority.MEDIUM,
+  })
   priority!: TaskPriority;
 
-  @Column({ type: 'enum', enum: TaskStatus, enumName: 'task_status_enum', default: TaskStatus.TODO })
+  @Column({
+    type: 'enum',
+    enum: TaskStatus,
+    enumName: 'task_status_enum',
+    default: TaskStatus.TODO,
+  })
   status!: TaskStatus;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -58,4 +68,3 @@ export class Task {
     if (!this.id) this.id = randomUUID();
   }
 }
-

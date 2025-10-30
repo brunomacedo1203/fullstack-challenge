@@ -65,4 +65,3 @@ export class CreateTasksAndAssignees1700000000000 implements MigrationInterface 
     await queryRunner.query('DROP TYPE IF EXISTS "task_status_enum"');
   }
 }
-
