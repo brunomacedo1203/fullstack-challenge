@@ -171,9 +171,9 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
 
    _Checkpoint:_ Comentários acessíveis pelo Gateway com usuário autenticado propagado ao serviço.
 
-6. **Fase 6 — Testes e validação**
-   - [ ] Executar migrations e cenários completos via Swagger (auth → tasks → comments → eventos).
-   - [ ] Verificar mensagens na RabbitMQ UI (`tasks.events`).
+6. **Fase 6 — Testes e validação** _(concluída)_
+   - [x] Executar migrations e cenários completos via Swagger (auth → tasks → comments → eventos).
+   - [x] Verificar mensagens na RabbitMQ UI (`tasks.events`).
    - **Commit:** `chore(tasks-service): validate comments and events end-to-end`
 
 7. **Fase 7 — Documentação**

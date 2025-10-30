@@ -43,6 +43,7 @@ O objetivo é entregar um **sistema colaborativo de gestão de tarefas** compost
 
 - **Monorepo & DevX:** Turborepo, npm workspaces, TypeScript 5, ESLint, Prettier
 - **Backend:** NestJS 11, TypeORM 0.3, PostgreSQL 17, Docker Compose
+- **Banco de Dados & Ferramentas:** PostgreSQL (via Docker) + DBeaver (inspeção visual do schema e dados)
 - **Infra complementar:** RabbitMQ 3 (management UI), Swagger/OpenAPI via Nest
 - **Frontend:** React + TanStack Router + Tailwind + shadcn/ui (a partir do Dia 7)
 
@@ -184,9 +185,37 @@ Regras principais:
 
 > Evidências capturadas via DBeaver (modo escuro) mostrando a evolução do schema PostgreSQL `challenge_db`.
 
+---
+
+### 🖼️ **Figura 1 – Estrutura geral do banco (Dia 4)**
+
+Visão geral das tabelas criadas até o final do Dia 4 (`users`, `tasks`, `task_assignees`, `migrations`).
+
 ![Figura 1 – Estrutura geral do banco (Dia 4)](./docs/images/db-figure-1.png)
+
+---
+
+### 🖼️ **Figura 2 – Estrutura detalhada da tabela `tasks`**
+
+Campos e tipos da tabela principal de tarefas, incluindo enums de prioridade e status.
+
 ![Figura 2 – Estrutura detalhada da tabela tasks](./docs/images/db-figure-2-tasks.png)
+
+---
+
+### 🖼️ **Figura 3 – Estrutura detalhada da tabela `users`**
+
+Tabela de usuários com credenciais seguras (hash de senha e refresh token).
+
 ![Figura 3 – Estrutura detalhada da tabela users](./docs/images/db-figure-3-users.png)
+
+---
+
+### 🖼️ **Figura 4 – Relações entre tabelas (ER Diagram – Dia 4)**
+
+Diagrama Entidade-Relacionamento (ER) gerado automaticamente pelo DBeaver.  
+Mostra as relações entre `tasks`, `users`, `task_assignees` e `migrations`.
+
 ![Figura 4 – ER Diagram – Dia 4](./docs/images/db-figure-4-er-dia4.png)
 
 ---
@@ -202,10 +231,10 @@ Após as migrations do **Dia 5 (Tasks Events)**, o banco passa a incluir:
 
 _Futuras imagens (após Dia 5):_
 
-![Figura 5 – Estrutura geral do banco (Dia 5)](./docs/images/db-figure-5-dia5.png)
-![Figura 6 – Estrutura da tabela comments](./docs/images/db-figure-6-comments.png)
-![Figura 7 – Estrutura da tabela task_history](./docs/images/db-figure-7-history.png)
-![Figura 8 – ER Diagram – Dia 5](./docs/images/db-figure-8-er-dia5.png)
+- **Figura 5 – Estrutura geral do banco (Dia 5)**
+- **Figura 6 – Estrutura da tabela `comments`**
+- **Figura 7 – Estrutura da tabela `task_history`**
+- **Figura 8 – ER Diagram – Dia 5**
 
 ---
 

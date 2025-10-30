@@ -4,6 +4,8 @@ import { DataSource } from 'typeorm';
 import { join } from 'node:path';
 import { Task } from './src/tasks/entities/task.entity';
 import { TaskAssignee } from './src/tasks/entities/task-assignee.entity';
+import { Comment } from './src/tasks/entities/comment.entity';
+import { TaskHistory } from './src/tasks/entities/task-history.entity';
 
 // Initialize ConfigModule to read env for CLI usage
 ConfigModule.forRoot({
@@ -23,6 +25,6 @@ export default new DataSource({
   username: configService.get<string>('DATABASE_USER', 'postgres'),
   password: configService.get<string>('DATABASE_PASSWORD', 'password'),
   database: configService.get<string>('DATABASE_NAME', 'challenge_db'),
-  entities: [Task, TaskAssignee],
+  entities: [Task, TaskAssignee, Comment, TaskHistory],
   migrations: isProd ? [join(__dirname, 'migrations/*.js')] : [join(__dirname, 'migrations/*.ts')],
 });

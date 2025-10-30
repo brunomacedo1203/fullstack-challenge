@@ -92,13 +92,14 @@ export class TasksService {
       const historyRepo = manager.getRepository(TaskHistory);
 
       const dueDate = this.parseDueDate(dto.dueDate);
-      const saved = await taskRepo.save({
+      const entity = taskRepo.create({
         title: dto.title,
         description: dto.description ?? null,
         dueDate,
         priority: dto.priority ?? TaskPriority.MEDIUM,
         status: dto.status ?? TaskStatus.TODO,
       });
+      const saved = await taskRepo.save(entity);
 
       if (assigneeIds.length) {
         const rows = assigneeIds.map((userId) => ({ taskId: saved.id, userId }));
