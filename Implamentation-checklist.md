@@ -210,9 +210,9 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
 _Checkpoint:_ Fila ligada e consumo visível na RabbitMQ UI.
 
 3. **Fase 3 — Contratos e roteamento de eventos**
-   - [ ] Usar tipos de `packages/types` para `task.created`, `task.updated`, `task.comment.created`.
-   - [ ] Validar payloads (Zod/Class-Validator) e descartar inválidos com NACK para DLQ.
-   - [ ] Roteador por `routingKey` + normalização de dados.
+   - [x] Usar tipos de `packages/types` para `task.created`, `task.updated`, `task.comment.created`.
+   - [x] Validar payloads (Zod/Class-Validator) e descartar inválidos com NACK para DLQ.
+   - [x] Roteador por `routingKey` + normalização de dados.
    - **Commit:** `feat(notifications-service): add event router and validation`
 
 4. **Fase 4 — Destinatários e persistência**

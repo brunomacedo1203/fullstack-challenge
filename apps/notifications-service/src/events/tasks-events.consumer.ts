@@ -1,6 +1,13 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Channel, ChannelModel, ConsumeMessage, Options, connect } from 'amqplib';
+import {
+  TaskCommentCreatedEvent,
+  TaskCreatedEvent,
+  TaskEvent,
+  TaskUpdatedEvent,
+} from '@jungle/types';
+import { InvalidTaskEventError, parseTaskEvent } from './task-event.parser';
 
 const LOGGER_CONTEXT = 'TasksEventsConsumer';
 const MAX_LOG_PAYLOAD_LENGTH = 200;
@@ -13,12 +20,19 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
   private readonly queue: string;
   private readonly routingPattern: string;
   private readonly deadLetterExchange?: string;
+  private readonly handlers: Record<TaskEvent['type'], (event: TaskEvent) => Promise<void>>;
 
   constructor(@Inject(ConfigService) private readonly configService: ConfigService) {
     this.exchange = this.configService.get<string>('TASKS_EVENTS_EXCHANGE', 'tasks.events');
     this.queue = this.configService.get<string>('NOTIFICATIONS_QUEUE', 'notifications.q');
-    this.routingPattern = this.configService.get<string>('TASKS_EVENTS_ROUTING', 'task.*');
+    this.routingPattern = this.configService.get<string>('TASKS_EVENTS_ROUTING', 'task.#');
     this.deadLetterExchange = this.configService.get<string>('NOTIFICATIONS_DLX');
+    this.handlers = {
+      'task.created': async (event) => this.handleTaskCreated(event as TaskCreatedEvent),
+      'task.updated': async (event) => this.handleTaskUpdated(event as TaskUpdatedEvent),
+      'task.comment.created': async (event) =>
+        this.handleTaskCommentCreated(event as TaskCommentCreatedEvent),
+    };
   }
 
   async onModuleInit(): Promise<void> {
@@ -61,27 +75,24 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
     };
 
     await channel.assertQueue(this.queue, queueOptions);
-    await channel.bindQueue(this.queue, this.exchange, this.routingPattern);
+    const patterns = this.routingPattern
+      .split(',')
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+    for (const pattern of patterns) {
+      await channel.bindQueue(this.queue, this.exchange, pattern);
+    }
     await channel.prefetch(10);
 
     await channel.consume(
       this.queue,
       async (message) => {
-        try {
-          await this.handleMessage(channel, message);
-        } catch (error) {
-          Logger.error(
-            `Failed to handle message ${message?.fields.routingKey ?? 'unknown'}: ${
-              (error as Error).message
-            }`,
-            undefined,
-            LOGGER_CONTEXT,
-          );
-
-          if (message) {
-            channel.nack(message, false, false);
-          }
+        if (!message) {
+          Logger.warn('Received empty message from RabbitMQ', LOGGER_CONTEXT);
+          return;
         }
+
+        await this.handleMessage(channel, message);
       },
       {
         noAck: false,
@@ -94,11 +105,7 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
     );
   }
 
-  private async handleMessage(channel: Channel, message: ConsumeMessage | null): Promise<void> {
-    if (!message) {
-      return;
-    }
-
+  private async handleMessage(channel: Channel, message: ConsumeMessage): Promise<void> {
     const { routingKey } = message.fields;
     const payload = message.content.toString('utf-8');
 
@@ -110,14 +117,58 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
     Logger.log(`Received ${routingKey}: ${preview}`, LOGGER_CONTEXT);
 
     try {
+      const event = parseTaskEvent(routingKey, payload);
+      await this.dispatchEvent(event);
       channel.ack(message);
     } catch (error) {
-      Logger.error(
-        `Failed to ACK message ${routingKey}: ${(error as Error).message}`,
-        undefined,
-        LOGGER_CONTEXT,
-      );
-      channel.nack(message, false, false);
+      const reason =
+        error instanceof InvalidTaskEventError || error instanceof Error
+          ? error.message
+          : 'Unknown error';
+
+      Logger.error(`Failed to process ${routingKey}: ${reason}`, undefined, LOGGER_CONTEXT);
+
+      try {
+        channel.nack(message, false, false);
+      } catch (nackError) {
+        Logger.error(
+          `Failed to NACK message ${routingKey}: ${(nackError as Error).message}`,
+          undefined,
+          LOGGER_CONTEXT,
+        );
+      }
     }
+  }
+
+  private async dispatchEvent(event: TaskEvent): Promise<void> {
+    const handler = this.handlers[event.type];
+    if (!handler) {
+      throw new Error(`No handler registered for event type ${event.type}`);
+    }
+
+    await handler(event);
+  }
+
+  private async handleTaskCreated(event: TaskCreatedEvent): Promise<void> {
+    Logger.log(
+      `Handled task.created for task ${event.taskId} with ${event.payload.assigneeIds.length} assignees`,
+      LOGGER_CONTEXT,
+    );
+  }
+
+  private async handleTaskUpdated(event: TaskUpdatedEvent): Promise<void> {
+    Logger.log(
+      `Handled task.updated for task ${event.taskId} (changed fields: ${
+        Object.keys(event.payload.changedFields).join(', ') || 'none'
+      })`,
+      LOGGER_CONTEXT,
+    );
+  }
+
+  private async handleTaskCommentCreated(event: TaskCommentCreatedEvent): Promise<void> {
+    Logger.log(
+      `Handled task.comment.created for task ${event.taskId} (comment ${event.payload.commentId})`,
+      LOGGER_CONTEXT,
+    );
   }
 }
