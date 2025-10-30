@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export enum TaskPriorityDto {
   LOW = 'LOW',
@@ -48,4 +57,3 @@ export class CreateTaskDto {
   @IsUUID('4', { each: true })
   assigneeIds?: string[];
 }
-

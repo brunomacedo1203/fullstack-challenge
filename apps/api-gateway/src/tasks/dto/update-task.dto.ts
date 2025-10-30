@@ -1,9 +1,22 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { TaskPriorityDto, TaskStatusDto } from './create-task.dto';
 
 export class UpdateTaskDto {
-  @ApiPropertyOptional({ example: 'Atualizar documentação do projeto', minLength: 1, maxLength: 255 })
+  @ApiPropertyOptional({
+    example: 'Atualizar documentação do projeto',
+    minLength: 1,
+    maxLength: 255,
+  })
   @IsOptional()
   @IsString()
   @MinLength(1)
@@ -36,4 +49,3 @@ export class UpdateTaskDto {
   @IsUUID('4', { each: true })
   assigneeIds?: string[];
 }
-
