@@ -37,10 +37,12 @@ test('handleMessage ACKs the message when processing succeeds', async (t) => {
   });
 
   t.mock.module('amqplib', {
-    connect: async () => ({
-      createChannel: async () => ({}),
-      close: async () => undefined,
-    }),
+    namedExports: {
+      connect: async () => ({
+        createChannel: async () => ({}),
+        close: async () => undefined,
+      }),
+    },
   });
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
@@ -64,10 +66,12 @@ test('handleMessage NACKs the message when ACK throws', async (t) => {
   });
 
   t.mock.module('amqplib', {
-    connect: async () => ({
-      createChannel: async () => ({}),
-      close: async () => undefined,
-    }),
+    namedExports: {
+      connect: async () => ({
+        createChannel: async () => ({}),
+        close: async () => undefined,
+      }),
+    },
   });
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
@@ -101,21 +105,23 @@ test('setupConsumer wraps the handler with error handling and NACKs failures', a
   const nack = mock.fn(() => undefined) as AckFn;
 
   t.mock.module('amqplib', {
-    connect: async () => ({
-      createChannel: async () => ({
-        assertExchange: async () => undefined,
-        assertQueue: async () => undefined,
-        bindQueue: async () => undefined,
-        prefetch: async () => undefined,
-        consume: async (_queue: string, handler: typeof consumeHandler) => {
-          consumeHandler = handler;
-        },
-        ack,
-        nack,
+    namedExports: {
+      connect: async () => ({
+        createChannel: async () => ({
+          assertExchange: async () => undefined,
+          assertQueue: async () => undefined,
+          bindQueue: async () => undefined,
+          prefetch: async () => undefined,
+          consume: async (_queue: string, handler: typeof consumeHandler) => {
+            consumeHandler = handler;
+          },
+          ack,
+          nack,
+          close: async () => undefined,
+        }),
         close: async () => undefined,
       }),
-      close: async () => undefined,
-    }),
+    },
   });
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
