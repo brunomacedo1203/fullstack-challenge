@@ -1,452 +1,178 @@
-# Desafio Full-stack Júnior — Sistema de Gestão de Tarefas Colaborativo
+# Jungle Gaming — Full-Stack Challenge – Monorepo (WIP)
 
-Bem‑vindo(a)! Este é um **teste prático** para a vaga de **Full‑stack Developer Júnior** na **Jungle Gaming**. O objetivo é avaliar sua capacidade de estruturar um monorepo, modelar um domínio simples, construir uma UI funcional e integrar serviços usando mensageria.
+Este repositório contém a implementação incremental do desafio full-stack da Jungle Gaming. O objetivo final é entregar um sistema colaborativo de gestão de tarefas composto por múltiplos serviços NestJS, um API Gateway, aplicação React e comunicação assíncrona via RabbitMQ.
 
-> **Stack Obrigatória**
+> **Status atual (Fim do Dia 4):**
 >
-> - **Front‑end:** React.js + **TanStack Router**, **shadcn/ui**, **Tailwind CSS**
-> - **Back‑end:** **Nest.js**, **TypeORM**, **RabbitMQ** (microservices Nest)
-> - **Infra/DevX:** **Docker & docker‑compose**, **Monorepo com Turborepo**
+> - Infraestrutura Docker e Turborepo operacionais.
+> - Auth Service completo (cadastro, login, refresh token, bcrypt, TypeORM/Postgres).
+> - API Gateway com proteção JWT, rate limiting, Swagger e rotas proxy para auth e tasks.
+> - Tasks Service com CRUD de tarefas + paginação, validações rigorosas e migrations.
+> - Notificações, comentários, histórico e frontend ainda em desenvolvimento (Dias 5+).
 
-## 🚀 Quick Start (Local)
-
-1. Instale as dependências do monorepo:
-   ```bash
-   npm install
-   ```
-2. Rode as checagens padrão para validar o ambiente:
-   ```bash
-   npm run check-all
-   ```
-3. Duplique cada `.env.example` para `.env` dentro dos apps em `apps/*/`.
-4. Suba a stack completa com Docker Compose:
-   ```bash
-   docker compose up --build
-   ```
-5. Acesse:
-   - Web: http://localhost:3000
-   - API Gateway: http://localhost:3001
-   - RabbitMQ UI: http://localhost:15672 (admin/admin)
-
-> Para desenvolvimento local sem Docker, use `npm run dev --workspace=<package>` em cada app.
-
----
-
-## 🔐 Auth Service (NestJS)
-
-- Desenvolvimento local: `npm run dev --workspace=@jungle/auth-service`
-- Build/Start (prod-like): `npm run build --workspace=@jungle/auth-service && npm run start --workspace=@jungle/auth-service`
-- Executar migrations:
-  ```bash
-  npm run migration:run --workspace=@jungle/auth-service
-  ```
-- Variáveis de ambiente principais (`apps/auth-service/.env.example`):
-  - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME`
-  - `JWT_ACCESS_SECRET`, `JWT_ACCESS_TTL` (default `15m`)
-  - `JWT_REFRESH_SECRET`, `JWT_REFRESH_TTL` (default `7d`)
-  - `BCRYPT_SALT_ROUNDS` (default `10`)
-- Endpoints expostos diretamente pelo serviço:
-  - `POST /auth/register`
-  - `POST /auth/login`
-- `POST /auth/refresh`
-
----
-
-## 🌐 API Gateway (NestJS)
-
-- Desenvolvimento local: `npm run dev --workspace=@jungle/api-gateway`
-- Build/Start (prod-like): `npm run build --workspace=@jungle/api-gateway && npm run start --workspace=@jungle/api-gateway`
-- Variáveis chave (`apps/api-gateway/.env.example`):
-  - `AUTH_SERVICE_URL`, `TASKS_SERVICE_URL`, `NOTIFICATIONS_SERVICE_URL`
-  - `JWT_ACCESS_SECRET` (deve bater com o auth-service)
-  - `HTTP_TIMEOUT_MS` (timeout padrão nas chamadas HTTP downstream)
-- Recursos:
-  - Swagger: http://localhost:3001/api/docs
-  - Rotas proxy:
-    - `POST /api/auth/register`
-    - `POST /api/auth/login`
-    - `POST /api/auth/refresh`
-    - `GET/POST/PUT/DELETE /api/tasks*` (protegidas por JWT)
-
----
-
-## 🎯 Contexto & Objetivo
-
-Construir um **Sistema de Gestão de Tarefas Colaborativo** com autenticação simples, CRUD de tarefas, comentários, atribuição e notificações. O sistema deve rodar em **monorepo** e expor uma **UI** limpa, responsiva e usável. O back‑end deve ser composto por **microserviços Nest** que se comunicam via **RabbitMQ**; o acesso HTTP externo passa por um **API Gateway** (Nest HTTP).
-
-**O que queremos observar:**
-
-- Organização, clareza e pragmatismo.
-- Segurança básica (hash de senha, validação de entrada).
-- Divisão de responsabilidades entre serviços.
-- Qualidade da UI e DX (developer experience).
-
----
-
-## 🧱 Requisitos Funcionais
-
-### Autenticação & Gateway
-
-- **JWT** com **cadastro/login** (email, username, password) e **proteção de rotas no API Gateway**.
-- **Hash de senha** com **bcrypt** (ou argon2).
-- **Tokens:** `accessToken` (15 min) e `refreshToken` (7 dias) + **endpoint de refresh**.
-- **Swagger/OpenAPI** exposto no Gateway.
-
-### Tarefas (inclui comentários e histórico)
-
-- **CRUD completo** com campos: **título**, **descrição**, **prazo**, **prioridade** (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) e **status** (`TODO`, `IN_PROGRESS`, `REVIEW`, `DONE`).
-- **Atribuição a múltiplos usuários**.
-- **Comentários**: criar e listar em cada tarefa.
-- **Histórico de alterações** (audit log simplificado).
-
-### Notificações & Tempo Real
-
-- Ao **criar/atualizar/comentar** uma tarefa, **publicar evento** no broker (**RabbitMQ**).
-- Serviço de **notifications** consome da fila, **persiste** e **entrega via WebSocket**.
-- WebSocket notifica quando:
-  - a tarefa é **atribuída** ao usuário;
-  - o **status** da tarefa muda;
-  - há **novo comentário** em tarefa da qual participa.
-
-### Docker
-
-- **Obrigatório subir tudo com Docker Compose** (serviços do app, broker, dbs, etc.).
-
-## ⚡ HTTP Endpoints & WebSocket Events
-
-### HTTP (Gateway)
+## Arquitetura
 
 ```
-POST   /api/auth/register
-POST   /api/auth/login
-POST   /api/auth/refresh
-
-GET    /api/tasks?page=&size=               # lista de tarefas com paginação
-POST   /api/tasks                           # cria e publica `task.created`
-GET    /api/tasks/:id
-PUT    /api/tasks/:id                       # atualiza e publica `task.updated`
-DELETE /api/tasks/:id
-
-POST   /api/tasks/:id/comments              # publica `task.comment.created`
-GET    /api/tasks/:id/comments?page=&size   # lista de comentários com paginação
+                       ┌──────────────┐
+                       │   Web (WIP)  │
+                       └──────┬───────┘
+                              │ HTTP (JWT)
+                      ┌───────▼────────┐
+                      │  API Gateway   │  Swagger → http://localhost:3001/api/docs
+                      └───────▲────────┘
+                          HTTP│
+┌──────────────────────────────┼─────────────────────────────┐
+│        Serviços internos NestJS + Postgres + RabbitMQ      │
+│  ┌─────────────┐    ┌────────────────┐       ┌───────────┐ │
+│  │ Auth Service│    │ Tasks Service  │       │ Notifications│ (backlog)
+│  └──────┬──────┘    └───────┬────────┘       └───────┬───┘ │
+│         │ JWT & Users       │ CRUD + Assignees         │    │
+│         │                   │                          │    │
+│      ┌──▼──┐            ┌───▼───┐                 ┌────▼──┐ │
+│      │ DB  │◄───────────┤ Tables│                 │RabbitMQ│ │
+│      └─────┘            └───────┘                 └───────┘ │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### WebSocket Events
+## Stack
 
-- `task:created` – tarefa foi criada
-- `task:updated` – tarefa foi atualizada
-- `comment:new` – novo comentário
+- **Monorepo & DevX**: Turborepo, npm workspaces, TypeScript 5, ESLint, Prettier.
+- **Backend**: NestJS 11, TypeORM 0.3, PostgreSQL 17, Docker Compose.
+- **Infra complementar**: RabbitMQ 3 (management UI), Swagger/OpenAPI via Nest.
+- **Frontend**: React + TanStack Router + Tailwind + shadcn/ui (implementação a partir do Dia 7).
 
----
+## Como rodar
 
-## 🏗️ Estrutura do Monorepo (sugerida)
+### 1. Pré-requisitos
 
-```
-.
-├── apps/
-│   ├── web/
-│   │   ├── src/                  # React + TanStack Router + shadcn + Tailwind
-│   │   ├── Dockerfile
-│   │   ├── .env.example          # variáveis de ambiente do frontend
-│   │   ├── package.json
-│   ├── api-gateway/
-│   │   ├── src/                  # HTTP + WebSocket + Swagger
-│   │   ├── Dockerfile
-│   │   ├── .env.example          # variáveis do API Gateway (Nest.js)
-│   │   ├── package.json
-│   ├── auth-service/
-│   │   ├── src/                  # Nest.js (microserviço de autenticação)
-│   │   ├── migrations/
-│   │   ├── Dockerfile
-│   │   ├── .env.example          # variáveis do serviço de autenticação
-│   │   ├── package.json
-│   ├── tasks-service/
-│   │   ├── src/                  # Nest.js (microserviço RabbitMQ)
-│   │   ├── migrations/
-│   │   ├── Dockerfile
-│   │   ├── .env.example          # variáveis do serviço de tarefas
-│   │   ├── package.json
-│   └── notifications-service/
-│       ├── src/                  # Nest.js (microserviço RabbitMQ + WebSocket)
-│       ├── migrations/
-│       ├── Dockerfile
-│       ├── .env.example          # variáveis do serviço de notificações
-│       ├── package.json
-├── packages/
-│   ├── types/
-│   ├── utils/
-│   ├── eslint-config/
-│   └── tsconfig/
-├── docker-compose.yml
-├── turbo.json
-├── package.json
-└── README.md
+- Docker + Docker Compose
+- Node.js 20 (para rodar scripts locais, migrations etc.)
+
+### 2. Instalação
+
+```bash
+npm install
 ```
 
----
+### 3. Variáveis de ambiente
 
-## 🧭 Front-end (exigências)
+Cada app possui um `.env.example`. Copie para `.env`:
 
-- **React.js** com **TanStack Router**.
-- **UI:** mínimo 5 componentes com **shadcn/ui** + **Tailwind CSS**.
-- **Páginas obrigatórias:**
-  - Login/Register com validação (Pode ser um modal)
-  - Lista de tarefas com filtros e busca
-  - Detalhe da tarefa com comentários
-- **Estado:** Context API ou Zustand para auth.
-- **WebSocket:** conexão para notificações em tempo real.
-- **Validação:** `react-hook-form` + `zod`.
-- **Loading/Error:** Skeleton loaders (shimmer effect) e toast notifications.
-
-> **Diferencial:** TanStack Query.
-
----
-
-## 🛠️ Back-end (exigências)
-
-- **Nest.js** com **TypeORM** (PostgreSQL).
-- **JWT** com Guards e estratégias Passport.
-- **Swagger** completo no Gateway (`/api/docs`).
-- **DTOs** com `class-validator` e `class-transformer`.
-- **Microserviços** Nest.js com **RabbitMQ**.
-- **WebSocket** Gateway para eventos real-time.
-- **Migrations** com TypeORM.
-- **Rate limiting** no API Gateway (10 req/seg).
-
-> **Diferencial:** health checks, Logging com Winston ou Pino, testes unitários.
-
----
-
-## 🐳 Docker & Compose (sugerido)
-
-```yaml
-version: '3.8'
-
-services:
-  # Frontend React Application
-  web:
-    container_name: web
-    build:
-      context: .
-      dockerfile: ./apps/web/Dockerfile
-      target: development
-    ports:
-      - '3000:3000'
-    environment:
-      - NODE_ENV=development
-    networks:
-      - challenge-network
-    command: npm run dev -- --host 0.0.0.0
-
-  # API Gateway
-  api-gateway:
-    container_name: api-gateway
-    build:
-      context: .
-      dockerfile: ./apps/api-gateway/Dockerfile
-      target: development
-    ports:
-      - '3001:3001'
-    volumes:
-      - .:/app
-      - ./packages:/app/packages
-      - /app/node_modules
-      - /app/apps/api-gateway/node_modules
-    environment:
-      - NODE_ENV=development
-      - PORT=3001
-    depends_on:
-      db:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    networks:
-      - challenge-network
-
-  # Auth Service
-  auth-service:
-    container_name: auth-service
-    build:
-      context: .
-      dockerfile: ./apps/auth-service/Dockerfile
-      target: development
-    ports:
-      - '3002:3002'
-    volumes:
-      - .:/app
-      - ./packages:/app/packages
-      - /app/node_modules
-      - /app/apps/auth-service/node_modules
-    environment:
-      - NODE_ENV=development
-      - PORT=3002
-    depends_on:
-      db:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    networks:
-      - challenge-network
-
-  # Tasks Service
-  tasks-service:
-    container_name: tasks-service
-    build:
-      context: .
-      dockerfile: ./apps/tasks-service/Dockerfile
-      target: development
-    ports:
-      - '3003:3003'
-    volumes:
-      - .:/app
-      - ./packages:/app/packages
-      - /app/node_modules
-      - /app/apps/tasks-service/node_modules
-    environment:
-      - NODE_ENV=development
-      - PORT=3003
-    depends_on:
-      db:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    networks:
-      - challenge-network
-
-  # Notifications Service
-  notifications-service:
-    container_name: notifications-service
-    build:
-      context: .
-      dockerfile: ./apps/notifications-service/Dockerfile
-      target: development
-    ports:
-      - '3004:3004'
-    volumes:
-      - .:/app
-      - ./packages:/app/packages
-      - /app/node_modules
-      - /app/apps/notifications-service/node_modules
-    environment:
-      - NODE_ENV=development
-      - PORT=3004
-    depends_on:
-      db:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    networks:
-      - challenge-network
-
-  # Postgres Database
-  db:
-    image: postgres:17.5-alpine3.21
-    container_name: db
-    attach: false
-    ports:
-      - '5432:5432'
-    networks:
-      - challenge-network
-    restart: always
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: postgres
-      POSTGRES_DB: challenge_db
-
-  # RabbitMQ
-  rabbitmq:
-    image: rabbitmq:3.13-management-alpine
-    container_name: rabbitmq
-    attach: false
-    restart: always
-    ports:
-      - '5672:5672'
-      - '15672:15672'
-    networks:
-      - challenge-network
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
-    volumes: ['rabbitmq_data:/var/lib/rabbitmq']
-
-volumes:
-  postgres_data:
-    driver: local
-  rabbitmq_data:
-    driver: local
-
-networks:
-  challenge-network:
-    driver: bridge
+```bash
+cp apps/<app>/.env.example apps/<app>/.env
 ```
 
----
+Valores padrão (local/dev) já funcionam com o `docker-compose.yml` presente.
 
-## 📝 Documentação Esperada
+### 4. Subir toda a stack
 
-No seu README, inclua:
+```bash
+docker compose up --build
+```
 
-1. **Arquitetura** (diagrama simples ASCII ou imagem)
-2. **Decisões técnicas** e trade-offs
-3. **Problemas conhecidos** e o que melhoraria
-4. **Tempo gasto** em cada parte
-5. **Instruções específicas** se houver
+Serviços expostos:
 
----
+| Serviço              | Porta | URL                                  |
+| -------------------- | ----- | ------------------------------------ |
+| Web (WIP)            | 3000  | http://localhost:3000                |
+| API Gateway          | 3001  | http://localhost:3001                |
+| Swagger (Gateway)    | —     | http://localhost:3001/api/docs       |
+| Auth Service         | 3002  | http://localhost:3002                |
+| Tasks Service        | 3003  | http://localhost:3003                |
+| Notifications (stub) | 3004  | http://localhost:3004                |
+| RabbitMQ UI          | 15672 | http://localhost:15672 (admin/admin) |
 
-## 📚 Material de Referência
+### 5. Rodar migrations
 
-Para auxiliar no desenvolvimento deste desafio, disponibilizamos alguns conteúdos que podem ser úteis:
+Execute assim que a stack estiver de pé:
 
-### Vídeos Recomendados
+```bash
+# Auth
+docker compose exec auth-service npm run migration:run --workspace=@jungle/auth-service
 
-- **[Autenticação centralizada em microsserviços NestJS](https://www.youtube.com/watch?v=iiSTB0btEgA)** - Como implementar autenticação centralizada em uma arquitetura de microsserviços usando NestJS.
-- **[Tutorial de Microservices com Nest.js em 20 Minutos](https://www.youtube.com/watch?v=C250DCwS81Q)** - Passo a passo rápido para criar e conectar microsserviços no NestJS.
+# Tasks
+docker compose exec tasks-service npm run migration:run --workspace=@jungle/tasks-service
+```
 
-Estes materiais são sugestões para apoiar seu desenvolvimento, mas sinta-se livre para buscar outras referências que julgar necessárias.
+### 6. Checagens locais (opcional)
 
----
+```bash
+npm run typecheck --workspace=@jungle/tasks-service
+npm run build --workspace=@jungle/tasks-service
+```
 
-## ❓ FAQ
+## Fluxo implementado até o momento
 
-**Posso usar NextJS ao invés de React puro?**
-Não. React com TanStack Router é obrigatório.
+### Autenticação
 
-**Preciso implementar reset de senha?**
-Não é obrigatório, mas seria um diferencial.
+| Endpoint                  | Via Gateway | Descrição                     |
+| ------------------------- | ----------- | ----------------------------- |
+| `POST /api/auth/register` | ✅          | Cria usuário + retorna tokens |
+| `POST /api/auth/login`    | ✅          | Autentica e retorna tokens    |
+| `POST /api/auth/refresh`  | ✅          | Atualiza access token         |
 
-**WebSocket é obrigatório?**
-Sim, para notificações em tempo real.
+- Hash de senha com bcrypt (`BCRYPT_SALT_ROUNDS`, default 10).
+- JWT Access (15 min) e Refresh (7 dias) – chaves compartilhadas entre Auth e Gateway.
+- Refresh token armazenado como hash no banco (`users.refresh_token_hash`).
 
-**Posso usar Prisma ou MikroORM ao invés de TypeORM?**
-Não. TypeORM é requisito obrigatório.
+**Como testar** (via Swagger):
 
----
+1. Abrir http://localhost:3001/api/docs.
+2. Executar `POST /api/auth/register` para criar usuário.
+3. Usar `POST /api/auth/login` para obter `accessToken` e `refreshToken`.
+4. No Swagger, clicar em **Authorize** e informar `Bearer <accessToken>`.
+5. Testar chamadas protegidas (Tasks) usando o token carregado.
 
-## 📧 Suporte e Dúvidas
+### Tasks Service (Dia 4)
 
-Caso tenha alguma dúvida sobre o teste ou precise de esclarecimentos:
+| Endpoint                 | Protegido | Observações                                             |
+| ------------------------ | --------- | ------------------------------------------------------- |
+| `GET /api/tasks`         | ✅        | Paginação (`page`, `size`), ordenação desc por criação  |
+| `POST /api/tasks`        | ✅        | Valida título, status, prioridade, `assigneeIds` únicos |
+| `GET /api/tasks/{id}`    | ✅        | Utiliza `ParseUUIDPipe` (400 p/ UUID inválido)          |
+| `PUT /api/tasks/{id}`    | ✅        | Transação: atualiza task + atribuições de forma atômica |
+| `DELETE /api/tasks/{id}` | ✅        | Remove tarefa e cascade nas atribuições                 |
 
-- Entre em contato com o **recrutador que enviou este teste**
-- Ou envie um e-mail para: **recruitment@junglegaming.io**
+Regras principais:
 
-Responderemos o mais breve possível para garantir que você tenha todas as informações necessárias para realizar o desafio.
+- `assigneeIds` deduplicados; duplicatas resultam em 400 (não 500).
+- Atualização de atribuídos ocorre dentro de transação: não há janela em que a tarefa fica sem responsáveis se o insert falhar.
+- `dueDate` é validado e convertido para `Date`; valores inválidos geram 400.
+- Respostas padronizadas com `assigneeIds` (lista de UUIDs) e metadados (`page`, `size`, `total`).
 
----
+**Como testar rapidamente (CLI):**
 
-## 🕒 Prazo
+```bash
+# Registrar usuário
+curl -sS -X POST http://localhost:3001/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","username":"demo","password":"password"}'
 
-- **Entrega:** 14 dias corridos a partir do recebimento
+# Efetuar login e capturar token
+TOKEN=$(curl -sS -X POST http://localhost:3001/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"password"}' | jq -r '.accessToken')
 
----
+# Criar tarefa
+curl -sS -X POST http://localhost:3001/api/tasks \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Primeira tarefa","description":"via CLI"}'
 
-## 💡 Dicas Finais
+# Listar
+curl -sS http://localhost:3001/api/tasks -H "Authorization: Bearer $TOKEN"
+```
 
-- **Comece pelo básico:** Auth → CRUD → RabbitMQ → WebSocket.
-- **Logs claros:** Facilita debug do fluxo assíncrono.
+> Caso o `jq` não esteja instalado, substitua a extração do token por script em Node ou copie manualmente do login.
 
----
+### RabbitMQ & Notifications
 
-**Boa sorte!** 🚀
+- RabbitMQ já está operacional e acessível via UI (admin/admin).
+- Publicação de eventos (`task.created`, `task.updated`, `task.comment.created`) e o Notifications Service serão implementados nos próximos dias (Dia 5+).
+
+## Decisões & Trade-offs
+
+- **Monorepo via Turborepo**: facilita o compartilhamento de tipos/utilitários e builds encadeados.
+- **TypeORM + migrations**: evita `synchronize` em produção e garante versionamento do schema.
+- **Validações agressivas**: preferimos falhar cedo com 400 a receber erros 500 genéricos do banco.
+- **Swagger como ferramenta de teste**: substitui Postman nesse projeto, diminui setup externo e documenta os endpoints automaticamente.
