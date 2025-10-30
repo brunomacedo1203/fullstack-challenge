@@ -68,7 +68,7 @@ export class TasksService {
       const saved = await taskRepo.save(entity);
 
       if (assigneeIds.length) {
-        const rows = assigneeIds.map((userId) => assigneeRepo.create({ taskId: saved.id, userId }));
+        const rows = assigneeIds.map((userId) => ({ taskId: saved.id, userId }));
         await assigneeRepo.insert(rows);
       }
 
@@ -166,7 +166,7 @@ export class TasksService {
       return;
     }
 
-    const rows = assigneeIds.map((userId) => assigneeRepo.create({ taskId, userId }));
+    const rows = assigneeIds.map((userId) => ({ taskId, userId }));
     await assigneeRepo.insert(rows);
   }
 }

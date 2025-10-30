@@ -8,7 +8,9 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Comment } from './comment.entity';
 import { TaskAssignee } from './task-assignee.entity';
+import { TaskHistory } from './task-history.entity';
 
 export enum TaskPriority {
   LOW = 'LOW',
@@ -62,6 +64,12 @@ export class Task {
 
   @OneToMany(() => TaskAssignee, (assignee) => assignee.task, { cascade: true })
   assignees?: TaskAssignee[];
+
+  @OneToMany(() => Comment, (comment) => comment.task)
+  comments?: Comment[];
+
+  @OneToMany(() => TaskHistory, (history) => history.task)
+  history?: TaskHistory[];
 
   @BeforeInsert()
   assignId(): void {
