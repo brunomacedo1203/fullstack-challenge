@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { ListCommentsQueryDto } from './dto/list-comments.query.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { Task, TaskAssignee, TaskPriority, TaskStatus } from './entities';
+import { Comment, Task, TaskAssignee, TaskPriority, TaskStatus } from './entities';
 
 export interface Paginated<T> {
   data: T[];
@@ -24,9 +26,20 @@ export type TaskResponse = {
   assigneeIds: string[];
 };
 
+export type CommentResponse = {
+  id: string;
+  taskId: string;
+  authorId?: string | null;
+  content: string;
+  createdAt: Date;
+};
+
 @Injectable()
 export class TasksService {
-  constructor(@InjectRepository(Task) private readonly tasksRepo: Repository<Task>) {}
+  constructor(
+    @InjectRepository(Task) private readonly tasksRepo: Repository<Task>,
+    @InjectRepository(Comment) private readonly commentsRepo: Repository<Comment>,
+  ) {}
 
   async list(page = 1, size = 10): Promise<Paginated<TaskResponse>> {
     const take = Math.max(1, Math.min(100, size));
@@ -112,6 +125,55 @@ export class TasksService {
     return { id };
   }
 
+  async listComments(
+    taskId: string,
+    query: ListCommentsQueryDto,
+  ): Promise<Paginated<CommentResponse>> {
+    await this.ensureTaskExists(taskId);
+
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const size = query.size && query.size > 0 ? Math.min(query.size, 100) : 10;
+    const skip = (page - 1) * size;
+
+    const [comments, total] = await this.commentsRepo.findAndCount({
+      where: { taskId },
+      order: { createdAt: 'DESC' },
+      skip,
+      take: size,
+    });
+
+    const data = comments.map((comment) => this.toCommentResponse(comment));
+
+    return { data, page, size, total };
+  }
+
+  async createComment(taskId: string, dto: CreateCommentDto): Promise<CommentResponse> {
+    const content = dto.content.trim();
+    if (!content) {
+      throw new BadRequestException('Comment content must not be empty');
+    }
+
+    const comment = await this.tasksRepo.manager.transaction(async (manager) => {
+      const taskRepo = manager.getRepository(Task);
+      const commentRepo = manager.getRepository(Comment);
+
+      const taskExists = await taskRepo.findOne({ where: { id: taskId } });
+      if (!taskExists) {
+        throw new NotFoundException('Task not found');
+      }
+
+      const entity = commentRepo.create({
+        taskId,
+        authorId: dto.authorId ?? null,
+        content,
+      });
+
+      return commentRepo.save(entity);
+    });
+
+    return this.toCommentResponse(comment);
+  }
+
   private toTaskResponse(task: Task & { assignees?: TaskAssignee[] }): TaskResponse {
     return {
       id: task.id,
@@ -123,6 +185,16 @@ export class TasksService {
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
       assigneeIds: (task.assignees ?? []).map((assignee) => assignee.userId),
+    };
+  }
+
+  private toCommentResponse(comment: Comment): CommentResponse {
+    return {
+      id: comment.id,
+      taskId: comment.taskId,
+      authorId: comment.authorId ?? null,
+      content: comment.content,
+      createdAt: comment.createdAt,
     };
   }
 
@@ -168,5 +240,12 @@ export class TasksService {
 
     const rows = assigneeIds.map((userId) => ({ taskId, userId }));
     await assigneeRepo.insert(rows);
+  }
+
+  private async ensureTaskExists(taskId: string): Promise<void> {
+    const exists = await this.tasksRepo.exist({ where: { id: taskId } });
+    if (!exists) {
+      throw new NotFoundException('Task not found');
+    }
   }
 }

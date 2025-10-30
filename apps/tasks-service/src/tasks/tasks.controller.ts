@@ -11,7 +11,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { ListCommentsQueryDto } from './dto/list-comments.query.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksService } from './tasks.service';
 
@@ -26,6 +28,14 @@ export class TasksController {
     @Query('size', new ParseIntPipe({ optional: true })) size?: number,
   ) {
     return this.tasksService.list(page ?? 1, size ?? 10);
+  }
+
+  @Get(':id/comments')
+  listComments(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Query() query: ListCommentsQueryDto,
+  ) {
+    return this.tasksService.listComments(id, query);
   }
 
   @Get(':id')
@@ -46,5 +56,13 @@ export class TasksController {
   @Delete(':id')
   delete(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.tasksService.delete(id);
+  }
+
+  @Post(':id/comments')
+  createComment(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: CreateCommentDto,
+  ) {
+    return this.tasksService.createComment(id, dto);
   }
 }
