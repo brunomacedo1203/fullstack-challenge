@@ -192,39 +192,65 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
 
 ---
 
-### 🔹 Subtasks
+### 🔹 Fases & Subtasks
 
-1. **Consumer setup**
-   - [ ] Criar módulo de conexão RabbitMQ (consumer).
-   - [ ] Escutar `tasks.events.*`.
-   - **Commit:**
-     ```bash
-     git commit -m "feat(notifications-service): setup RabbitMQ consumer"
-     ```
+1. **Fase 1 — Base do serviço e configuração**
+   - [x] Garantir app `apps/notifications-service` com NestJS + `ConfigModule`.
+   - [x] Adicionar/env files: `RABBITMQ_URL`, `TASKS_EVENTS_EXCHANGE` (default `tasks.events`), `NOTIFS_QUEUE` (default `notifications.q`), `PORT` (default `3004`).
+   - [x] Expor healthcheck HTTP (`/health`) para inspeção.
+   - **Commit:** `feat(notifications-service): scaffold service and env config`
 
-2. **Envio e persistência**
-   - [ ] Resolver destinatários (criador, assignees, autor do comentário).
-   - [ ] Persistir em tabela `notifications` (opcional).
-   - **Commit:**
-     ```bash
-     git commit -m "feat(notifications-service): handle and store notifications"
-     ```
+2. **Fase 2 — Consumer RabbitMQ (fila e bindings)**
+   - [ ] Declarar fila durável `notifications.q` (ou valor de `NOTIFS_QUEUE`).
+   - [ ] Bind ao exchange `tasks.events` com `task.*` (ou `task.#`).
+   - [ ] Configurar `prefetch(10)` e ACK manual; DLX `tasks.dlx` + `notifications.dlq` (opcional).
+   - [ ] Logar mensagens recebidas (routingKey + payload resumido).
+   - **Commit:** `feat(notifications-service): setup RabbitMQ consumer`
 
-3. **WebSocket**
-   - [ ] Implementar gateway WS `/ws`.
-   - [ ] Autenticar socket via JWT.
-   - [ ] Emitir:
-     - `task:created`
-     - `task:updated`
-     - `comment:new`
-   - **Commit:**
-     ```bash
-     git commit -m "feat(notifications-service): implement WebSocket gateway and JWT auth"
-     ```
+_Checkpoint:_ Fila ligada e consumo visível na RabbitMQ UI.
+
+3. **Fase 3 — Contratos e roteamento de eventos**
+   - [ ] Usar tipos de `packages/types` para `task.created`, `task.updated`, `task.comment.created`.
+   - [ ] Validar payloads (Zod/Class-Validator) e descartar inválidos com NACK para DLQ.
+   - [ ] Roteador por `routingKey` + normalização de dados.
+   - **Commit:** `feat(notifications-service): add event router and validation`
+
+4. **Fase 4 — Destinatários e persistência**
+   - [ ] Resolver destinatários: criador + assignees (filtrar `actorId` para não notificar a si mesmo).
+   - [ ] Schema `notifications`: `id`, `recipient_id`, `type`, `task_id`, `comment_id?`, `title`, `body`, `read_at`, `created_at`.
+   - [ ] Migration + índices em `(recipient_id, read_at)` e `(recipient_id, created_at desc)`.
+   - [ ] Persistir notificações ao consumir eventos.
+   - **Commit:** `feat(notifications-service): handle and store notifications`
+
+_Checkpoint:_ Notificações salvas e auditáveis por usuário no banco.
+
+5. **Fase 5 — WebSocket Gateway**
+   - [ ] Implementar WS em `/ws` com JWT no handshake (`?token=`) usando a mesma `JWT_SECRET` do Gateway.
+   - [ ] Mapear `userId -> sockets[]` e limpeza em `disconnect`.
+   - [ ] Padronizar eventos emitidos: `task:created`, `task:updated`, `comment:new`.
+   - **Commit:** `feat(notifications-service): implement WebSocket gateway and JWT auth`
+
+6. **Fase 6 — Entrega em tempo real e sincronização**
+   - [ ] Ao consumir evento, emitir aos sockets online dos destinatários.
+   - [ ] Se persistência ativa, ao conectar enviar não lidas (últimas N) e marcar como entregues quando apropriado.
+   - [ ] Endpoint opcional `GET /notifications` (paginado) para debug/local.
+   - **Commit:** `feat(notifications-service): wire consumer to ws and unread sync`
+
+_Checkpoint:_ Backend emite notificações em tempo real e sincroniza pendentes no connect.
+
+7. **Fase 7 — Observabilidade e QA**
+   - [ ] Logs estruturados por tipo de evento e métricas (contagem por `routingKey`).
+   - [ ] Teste E2E: 2 usuários (A e B) — A cria/atualiza/comenta; B recebe apenas o que lhe pertence.
+   - [ ] Scripts de debug no README (wscat/HTML simples para conectar com token).
+   - **Commit:** `chore(notifications-service): e2e validation and debug docs`
+
+8. **Fase 8 — Documentação**
+   - [ ] Atualizar README/checklist com envs, endpoints/WS e passos de teste.
+   - **Commit:** `docs: document notifications service and websocket usage`
 
 ---
 
-**Checkpoint:** Backend envia notificações em tempo real.
+**Checkpoint:** Backend envia notificações em tempo real para destinatários corretos.
 
 ---
 
