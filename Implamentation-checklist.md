@@ -154,12 +154,12 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
 
    _Checkpoint:_ Comentários podem ser criados e listados via tasks-service.
 
-3. **Fase 3 — Audit log de tarefas**
-   - [ ] Registrar `TASK_CREATED`, `TASK_UPDATED`, `COMMENT_CREATED` em `task_history` com payloads.
+3. **Fase 3 — Audit log de tarefas** _(concluída)_
+   - [x] Registrar `TASK_CREATED`, `TASK_UPDATED`, `COMMENT_CREATED` em `task_history` com payloads.
    - **Commit:** `feat(tasks-service): add audit log for task changes`
 
-4. **Fase 4 — Eventos RabbitMQ**
-   - [ ] Publicar eventos `task.created`, `task.updated`, `task.comment.created` (exchange `tasks.events`).
+4. **Fase 4 — Eventos RabbitMQ** _(concluída)_
+   - [x] Publicar eventos `task.created`, `task.updated`, `task.comment.created` (exchange `tasks.events`).
    - **Commit:** `feat(tasks-service): publish task events to RabbitMQ`
 
    _Checkpoint:_ Eventos `tasks.events` publicados e visíveis na RabbitMQ UI.

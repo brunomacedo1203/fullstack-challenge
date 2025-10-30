@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
+import { TaskCommentCreatedEvent, TaskCreatedEvent, TaskUpdatedEvent } from '@jungle/types';
+import { TasksEventsPublisher } from '../events/tasks-events.publisher';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { ListCommentsQueryDto } from './dto/list-comments.query.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -56,6 +58,7 @@ export class TasksService {
   constructor(
     @InjectRepository(Task) private readonly tasksRepo: Repository<Task>,
     @InjectRepository(Comment) private readonly commentsRepo: Repository<Comment>,
+    private readonly eventsPublisher: TasksEventsPublisher,
   ) {}
 
   async list(page = 1, size = 10): Promise<Paginated<TaskResponse>> {
@@ -114,54 +117,67 @@ export class TasksService {
       return saved.id;
     });
 
-    return this.getById(taskId);
+    const task = await this.getById(taskId);
+    await this.eventsPublisher.publishTaskCreated(this.toTaskCreatedEvent(task));
+    return task;
   }
 
   async update(id: string, dto: UpdateTaskDto): Promise<TaskResponse> {
     const assigneeIds =
       dto.assigneeIds !== undefined ? this.normalizeAssigneeIds(dto.assigneeIds) : undefined;
 
-    await this.tasksRepo.manager.transaction(async (manager) => {
-      const taskRepo = manager.getRepository(Task);
-      const historyRepo = manager.getRepository(TaskHistory);
+    const { changedFields, afterSnapshot } = await this.tasksRepo.manager.transaction(
+      async (manager) => {
+        const taskRepo = manager.getRepository(Task);
+        const historyRepo = manager.getRepository(TaskHistory);
 
-      const existing = await taskRepo.findOne({ where: { id }, relations: ['assignees'] });
-      if (!existing) throw new NotFoundException('Task not found');
+        const existing = await taskRepo.findOne({ where: { id }, relations: ['assignees'] });
+        if (!existing) throw new NotFoundException('Task not found');
 
-      const previousAssigneeIds = (existing.assignees ?? []).map((assignee) => assignee.userId);
-      const beforeSnapshot = this.buildTaskSnapshot(existing, previousAssigneeIds);
+        const previousAssigneeIds = (existing.assignees ?? []).map((assignee) => assignee.userId);
+        const beforeSnapshot = this.buildTaskSnapshot(existing, previousAssigneeIds);
 
-      // Prevent TypeORM from attempting to update relations via save
-      delete (existing as { assignees?: TaskAssignee[] }).assignees;
+        // Prevent TypeORM from attempting to update relations via save
+        delete (existing as { assignees?: TaskAssignee[] }).assignees;
 
-      if (dto.title !== undefined) existing.title = dto.title;
-      if (dto.description !== undefined) existing.description = dto.description ?? null;
-      if (dto.dueDate !== undefined) existing.dueDate = this.parseDueDate(dto.dueDate);
-      if (dto.priority !== undefined) existing.priority = dto.priority;
-      if (dto.status !== undefined) existing.status = dto.status;
+        if (dto.title !== undefined) existing.title = dto.title;
+        if (dto.description !== undefined) existing.description = dto.description ?? null;
+        if (dto.dueDate !== undefined) existing.dueDate = this.parseDueDate(dto.dueDate);
+        if (dto.priority !== undefined) existing.priority = dto.priority;
+        if (dto.status !== undefined) existing.status = dto.status;
 
-      await taskRepo.save(existing);
+        await taskRepo.save(existing);
 
-      const nextAssigneeIds = assigneeIds ?? previousAssigneeIds;
-      const afterSnapshot = this.buildTaskSnapshot(existing, nextAssigneeIds);
-      const changedFields = this.diffSnapshots(beforeSnapshot, afterSnapshot);
+        const nextAssigneeIds = assigneeIds ?? previousAssigneeIds;
+        const afterSnapshot = this.buildTaskSnapshot(existing, nextAssigneeIds);
+        const changedFields = this.diffSnapshots(beforeSnapshot, afterSnapshot);
 
-      if (assigneeIds !== undefined) {
-        await this.replaceAssignees(manager, id, assigneeIds);
-      }
+        if (assigneeIds !== undefined) {
+          await this.replaceAssignees(manager, id, assigneeIds);
+        }
 
-      if (Object.keys(changedFields).length > 0) {
-        await historyRepo.save(
-          historyRepo.create({
-            taskId: id,
-            type: TaskHistoryEventType.TASK_UPDATED,
-            payload: changedFields,
-          }),
-        );
-      }
-    });
+        if (Object.keys(changedFields).length > 0) {
+          await historyRepo.save(
+            historyRepo.create({
+              taskId: id,
+              type: TaskHistoryEventType.TASK_UPDATED,
+              payload: changedFields,
+            }),
+          );
+        }
+        return { changedFields, afterSnapshot };
+      },
+    );
 
-    return this.getById(id);
+    const task = await this.getById(id);
+
+    if (changedFields && Object.keys(changedFields).length > 0) {
+      await this.eventsPublisher.publishTaskUpdated(
+        this.toTaskUpdatedEvent(id, changedFields, afterSnapshot),
+      );
+    }
+
+    return task;
   }
 
   async delete(id: string): Promise<{ id: string }> {
@@ -232,6 +248,10 @@ export class TasksService {
 
       return saved;
     });
+
+    await this.eventsPublisher.publishTaskCommentCreated(
+      this.toTaskCommentCreatedEvent(comment, taskId, dto.authorId ?? undefined),
+    );
 
     return this.toCommentResponse(comment);
   }
@@ -311,7 +331,16 @@ export class TasksService {
     }
   }
 
-  private buildTaskSnapshot(task: Task, assigneeIds: string[]): TaskSnapshot {
+  private buildTaskSnapshot(
+    task: {
+      title: string;
+      description?: string | null;
+      status: TaskStatus;
+      priority: TaskPriority;
+      dueDate?: Date | null;
+    },
+    assigneeIds: string[],
+  ): TaskSnapshot {
     return {
       title: task.title,
       description: task.description ?? null,
@@ -354,5 +383,58 @@ export class TasksService {
       return a.length === b.length && a.every((value, index) => value === b[index]);
     }
     return a === b;
+  }
+
+  private toTaskCreatedEvent(task: TaskResponse): TaskCreatedEvent {
+    return {
+      type: 'task.created',
+      taskId: task.id,
+      occurredAt: new Date().toISOString(),
+      payload: {
+        title: task.title,
+        description: task.description ?? null,
+        status: task.status,
+        priority: task.priority,
+        dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+        assigneeIds: task.assigneeIds,
+      },
+    };
+  }
+
+  private toTaskUpdatedEvent(
+    taskId: string,
+    changedFields: Record<string, { from: unknown; to: unknown }>,
+    snapshot: TaskSnapshot,
+  ): TaskUpdatedEvent {
+    return {
+      type: 'task.updated',
+      taskId,
+      occurredAt: new Date().toISOString(),
+      payload: {
+        changedFields,
+        status: snapshot.status,
+        priority: snapshot.priority,
+        dueDate: snapshot.dueDate,
+        assigneeIds: snapshot.assigneeIds,
+      },
+    };
+  }
+
+  private toTaskCommentCreatedEvent(
+    comment: Comment,
+    taskId: string,
+    actorId?: string,
+  ): TaskCommentCreatedEvent {
+    return {
+      type: 'task.comment.created',
+      taskId,
+      occurredAt: comment.createdAt.toISOString(),
+      actorId,
+      payload: {
+        commentId: comment.id,
+        authorId: comment.authorId ?? undefined,
+        content: comment.content,
+      },
+    };
   }
 }
