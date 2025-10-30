@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { connect, Channel, Connection, Options } from 'amqplib';
+import { connect, Channel, ChannelModel, Options } from 'amqplib';
 import {
   TaskCommentCreatedEvent,
   TaskCreatedEvent,
@@ -12,7 +12,7 @@ const LOGGER_CONTEXT = 'TasksEventsPublisher';
 
 @Injectable()
 export class TasksEventsPublisher implements OnModuleInit, OnModuleDestroy {
-  private connection?: Connection;
+  private connectionModel?: ChannelModel;
   private channel?: Channel;
   private exchange: string;
 
@@ -28,7 +28,7 @@ export class TasksEventsPublisher implements OnModuleInit, OnModuleDestroy {
     await this.channel?.close().catch((error: unknown) => {
       Logger.error(`Failed to close RabbitMQ channel: ${(error as Error).message}`, LOGGER_CONTEXT);
     });
-    await this.connection?.close().catch((error: unknown) => {
+    await this.connectionModel?.close().catch((error: unknown) => {
       Logger.error(
         `Failed to close RabbitMQ connection: ${(error as Error).message}`,
         LOGGER_CONTEXT,
@@ -67,10 +67,10 @@ export class TasksEventsPublisher implements OnModuleInit, OnModuleDestroy {
   }
 
   private async ensureChannel(): Promise<Channel> {
-    if (!this.channel || !this.connection) {
+    if (!this.channel || !this.connectionModel) {
       const url = this.configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672');
-      this.connection = await connect(url);
-      this.channel = await this.connection.createChannel();
+      this.connectionModel = await connect(url);
+      this.channel = await this.connectionModel.createChannel();
 
       await this.channel.assertExchange(this.exchange, 'topic', { durable: true });
     }
