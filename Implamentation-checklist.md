@@ -164,9 +164,9 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
 
    _Checkpoint:_ Eventos `tasks.events` publicados e visíveis na RabbitMQ UI.
 
-5. **Fase 5 — Gateway & contexto do usuário**
-   - [ ] Proxies `/api/tasks/:id/comments` (POST/GET) com DTOs/documentação.
-   - [ ] Encaminhar `X-User-Id` do JWT para o tasks-service.
+5. **Fase 5 — Gateway & contexto do usuário** _(concluída)_
+   - [x] Proxies `/api/tasks/:id/comments` (POST/GET) com DTOs/documentação.
+   - [x] Encaminhar `X-User-Id` do JWT para o tasks-service.
    - **Commit:** `feat(api-gateway): proxy task comments with user context`
 
    _Checkpoint:_ Comentários acessíveis pelo Gateway com usuário autenticado propagado ao serviço.

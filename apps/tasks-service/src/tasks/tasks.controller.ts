@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -44,13 +45,17 @@ export class TasksController {
   }
 
   @Post()
-  create(@Body() dto: CreateTaskDto) {
-    return this.tasksService.create(dto);
+  create(@Body() dto: CreateTaskDto, @Headers('x-user-id') userId?: string) {
+    return this.tasksService.create(dto, userId);
   }
 
   @Put(':id')
-  update(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() dto: UpdateTaskDto) {
-    return this.tasksService.update(id, dto);
+  update(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: UpdateTaskDto,
+    @Headers('x-user-id') userId?: string,
+  ) {
+    return this.tasksService.update(id, dto, userId);
   }
 
   @Delete(':id')
@@ -62,7 +67,8 @@ export class TasksController {
   createComment(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: CreateCommentDto,
+    @Headers('x-user-id') userId?: string,
   ) {
-    return this.tasksService.createComment(id, dto);
+    return this.tasksService.createComment(id, dto, userId);
   }
 }

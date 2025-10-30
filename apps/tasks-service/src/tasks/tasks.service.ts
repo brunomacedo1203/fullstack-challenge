@@ -83,7 +83,7 @@ export class TasksService {
     return this.toTaskResponse(task);
   }
 
-  async create(dto: CreateTaskDto): Promise<TaskResponse> {
+  async create(dto: CreateTaskDto, actorId?: string): Promise<TaskResponse> {
     const assigneeIds = this.normalizeAssigneeIds(dto.assigneeIds);
 
     const taskId = await this.tasksRepo.manager.transaction(async (manager) => {
@@ -109,6 +109,7 @@ export class TasksService {
       await historyRepo.save(
         historyRepo.create({
           taskId: saved.id,
+          actorId: actorId ?? null,
           type: TaskHistoryEventType.TASK_CREATED,
           payload: historyPayload,
         }),
@@ -118,11 +119,11 @@ export class TasksService {
     });
 
     const task = await this.getById(taskId);
-    await this.eventsPublisher.publishTaskCreated(this.toTaskCreatedEvent(task));
+    await this.eventsPublisher.publishTaskCreated(this.toTaskCreatedEvent(task, actorId));
     return task;
   }
 
-  async update(id: string, dto: UpdateTaskDto): Promise<TaskResponse> {
+  async update(id: string, dto: UpdateTaskDto, actorId?: string): Promise<TaskResponse> {
     const assigneeIds =
       dto.assigneeIds !== undefined ? this.normalizeAssigneeIds(dto.assigneeIds) : undefined;
 
@@ -160,6 +161,7 @@ export class TasksService {
           await historyRepo.save(
             historyRepo.create({
               taskId: id,
+              actorId: actorId ?? null,
               type: TaskHistoryEventType.TASK_UPDATED,
               payload: changedFields,
             }),
@@ -173,7 +175,7 @@ export class TasksService {
 
     if (changedFields && Object.keys(changedFields).length > 0) {
       await this.eventsPublisher.publishTaskUpdated(
-        this.toTaskUpdatedEvent(id, changedFields, afterSnapshot),
+        this.toTaskUpdatedEvent(id, changedFields, afterSnapshot, actorId),
       );
     }
 
@@ -210,11 +212,17 @@ export class TasksService {
     return { data, page, size, total };
   }
 
-  async createComment(taskId: string, dto: CreateCommentDto): Promise<CommentResponse> {
+  async createComment(
+    taskId: string,
+    dto: CreateCommentDto,
+    actorId?: string,
+  ): Promise<CommentResponse> {
     const content = dto.content.trim();
     if (!content) {
       throw new BadRequestException('Comment content must not be empty');
     }
+
+    const resolvedAuthorId = actorId ?? dto.authorId ?? null;
 
     const comment = await this.tasksRepo.manager.transaction(async (manager) => {
       const taskRepo = manager.getRepository(Task);
@@ -228,7 +236,7 @@ export class TasksService {
 
       const entity = commentRepo.create({
         taskId,
-        authorId: dto.authorId ?? null,
+        authorId: resolvedAuthorId,
         content,
       });
       const saved = await commentRepo.save(entity);
@@ -236,12 +244,12 @@ export class TasksService {
       await historyRepo.save(
         historyRepo.create({
           taskId,
-          actorId: dto.authorId ?? null,
+          actorId: resolvedAuthorId,
           type: TaskHistoryEventType.COMMENT_CREATED,
           payload: {
             commentId: saved.id,
             content: saved.content,
-            authorId: saved.authorId ?? null,
+            authorId: resolvedAuthorId,
           },
         }),
       );
@@ -250,7 +258,7 @@ export class TasksService {
     });
 
     await this.eventsPublisher.publishTaskCommentCreated(
-      this.toTaskCommentCreatedEvent(comment, taskId, dto.authorId ?? undefined),
+      this.toTaskCommentCreatedEvent(comment, taskId, resolvedAuthorId ?? undefined),
     );
 
     return this.toCommentResponse(comment);
@@ -385,11 +393,12 @@ export class TasksService {
     return a === b;
   }
 
-  private toTaskCreatedEvent(task: TaskResponse): TaskCreatedEvent {
+  private toTaskCreatedEvent(task: TaskResponse, actorId?: string): TaskCreatedEvent {
     return {
       type: 'task.created',
       taskId: task.id,
       occurredAt: new Date().toISOString(),
+      actorId,
       payload: {
         title: task.title,
         description: task.description ?? null,
@@ -405,11 +414,13 @@ export class TasksService {
     taskId: string,
     changedFields: Record<string, { from: unknown; to: unknown }>,
     snapshot: TaskSnapshot,
+    actorId?: string,
   ): TaskUpdatedEvent {
     return {
       type: 'task.updated',
       taskId,
       occurredAt: new Date().toISOString(),
+      actorId,
       payload: {
         changedFields,
         status: snapshot.status,
