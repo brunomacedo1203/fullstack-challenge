@@ -15,32 +15,56 @@ export class TasksProxyService {
     this.baseUrl = configService.get<string>('TASKS_SERVICE_URL', 'http://tasks-service:3003');
   }
 
-  list(params: unknown, authorization?: string): Promise<unknown> {
-    return this.forward('get', '/tasks', { params, authorization });
+  list(params: unknown, authorization?: string, userId?: string): Promise<unknown> {
+    return this.forward('get', '/tasks', { params, authorization, userId });
   }
 
-  getById(id: string, authorization?: string): Promise<unknown> {
-    return this.forward('get', `/tasks/${id}`, { authorization });
+  getById(id: string, authorization?: string, userId?: string): Promise<unknown> {
+    return this.forward('get', `/tasks/${id}`, { authorization, userId });
   }
 
-  create(body: unknown, authorization?: string): Promise<unknown> {
-    return this.forward('post', '/tasks', { body, authorization });
+  create(body: unknown, authorization?: string, userId?: string): Promise<unknown> {
+    return this.forward('post', '/tasks', { body, authorization, userId });
   }
 
-  update(id: string, body: unknown, authorization?: string): Promise<unknown> {
-    return this.forward('put', `/tasks/${id}`, { body, authorization });
+  update(id: string, body: unknown, authorization?: string, userId?: string): Promise<unknown> {
+    return this.forward('put', `/tasks/${id}`, { body, authorization, userId });
   }
 
-  delete(id: string, authorization?: string): Promise<unknown> {
-    return this.forward('delete', `/tasks/${id}`, { authorization });
+  delete(id: string, authorization?: string, userId?: string): Promise<unknown> {
+    return this.forward('delete', `/tasks/${id}`, { authorization, userId });
+  }
+
+  listComments(
+    taskId: string,
+    params: unknown,
+    authorization?: string,
+    userId?: string,
+  ): Promise<unknown> {
+    return this.forward('get', `/tasks/${taskId}/comments`, { params, authorization, userId });
+  }
+
+  createComment(
+    taskId: string,
+    body: unknown,
+    authorization?: string,
+    userId?: string,
+  ): Promise<unknown> {
+    return this.forward('post', `/tasks/${taskId}/comments`, { body, authorization, userId });
   }
 
   private async forward(
     method: 'get' | 'post' | 'put' | 'delete',
     path: string,
-    options: { params?: unknown; body?: unknown; authorization?: string },
+    options: { params?: unknown; body?: unknown; authorization?: string; userId?: string },
   ): Promise<unknown> {
-    const headers = options.authorization ? { Authorization: options.authorization } : undefined;
+    const headers: Record<string, string> = {};
+    if (options.authorization) {
+      headers.Authorization = options.authorization;
+    }
+    if (options.userId) {
+      headers['X-User-Id'] = options.userId;
+    }
 
     try {
       const request$ = this.http.request({
@@ -48,7 +72,7 @@ export class TasksProxyService {
         url: `${this.baseUrl}${path}`,
         data: options.body,
         params: options.params,
-        headers,
+        headers: Object.keys(headers).length ? headers : undefined,
       });
 
       const { data } = await firstValueFrom(request$);
