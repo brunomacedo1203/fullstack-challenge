@@ -194,20 +194,6 @@ Regras principais e integrações:
 
 ---
 
-### 🖼️ **Swagger – Dia 4**
-
-Captura da documentação antes da inclusão de comentários e eventos.
-
-![Swagger – Dia 4](./docs/images/swagger%20dia%204.png)
-
-### 🖼️ **Swagger – Dia 5**
-
-Swagger atualizado com endpoints de comentários e descrições refinadas para tasks.
-
-![Swagger – Dia 5](./docs/images/swagger%20dia%205.png)
-
----
-
 ## ⚖️ Decisões & Trade-offs
 
 - **Monorepo via Turborepo:** facilita o compartilhamento de tipos/utilitários e builds encadeados
@@ -253,6 +239,20 @@ Diagrama Entidade-Relacionamento (ER) gerado automaticamente pelo DBeaver.
 Mostra as relações entre `tasks`, `users`, `task_assignees` e `migrations`.
 
 ![Figura 4 – ER Diagram – Dia 4](./docs/images/db-figure-4-er-dia4.png)
+
+---
+
+### 🖼️ **Figura 5 – Swagger (Dia 4)**
+
+Documentação dos endpoints antes da inclusão de comentários e eventos.
+
+![Figura 5 – Swagger (Dia 4)](./docs/images/swagger%20dia%204.png)
+
+### 🖼️ **Figura 6 – Swagger (Dia 5)**
+
+Swagger com os novos endpoints de comentários e descrições atualizadas.
+
+![Figura 6 – Swagger (Dia 5)](./docs/images/swagger%20dia%205.png)
 
 ---
 
