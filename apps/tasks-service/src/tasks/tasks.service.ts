@@ -5,7 +5,15 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { ListCommentsQueryDto } from './dto/list-comments.query.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { Comment, Task, TaskAssignee, TaskPriority, TaskStatus } from './entities';
+import {
+  Comment,
+  Task,
+  TaskAssignee,
+  TaskHistory,
+  TaskHistoryEventType,
+  TaskPriority,
+  TaskStatus,
+} from './entities';
 
 export interface Paginated<T> {
   data: T[];
@@ -32,6 +40,15 @@ export type CommentResponse = {
   authorId?: string | null;
   content: string;
   createdAt: Date;
+};
+
+type TaskSnapshot = {
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  dueDate: string | null;
+  assigneeIds: string[];
 };
 
 @Injectable()
@@ -69,21 +86,30 @@ export class TasksService {
     const taskId = await this.tasksRepo.manager.transaction(async (manager) => {
       const taskRepo = manager.getRepository(Task);
       const assigneeRepo = manager.getRepository(TaskAssignee);
+      const historyRepo = manager.getRepository(TaskHistory);
 
-      const entity = taskRepo.create({
+      const dueDate = this.parseDueDate(dto.dueDate);
+      const saved = await taskRepo.save({
         title: dto.title,
         description: dto.description ?? null,
-        dueDate: this.parseDueDate(dto.dueDate),
+        dueDate,
         priority: dto.priority ?? TaskPriority.MEDIUM,
         status: dto.status ?? TaskStatus.TODO,
       });
-
-      const saved = await taskRepo.save(entity);
 
       if (assigneeIds.length) {
         const rows = assigneeIds.map((userId) => ({ taskId: saved.id, userId }));
         await assigneeRepo.insert(rows);
       }
+
+      const historyPayload = this.buildTaskSnapshot(saved, assigneeIds);
+      await historyRepo.save(
+        historyRepo.create({
+          taskId: saved.id,
+          type: TaskHistoryEventType.TASK_CREATED,
+          payload: historyPayload,
+        }),
+      );
 
       return saved.id;
     });
@@ -97,9 +123,16 @@ export class TasksService {
 
     await this.tasksRepo.manager.transaction(async (manager) => {
       const taskRepo = manager.getRepository(Task);
+      const historyRepo = manager.getRepository(TaskHistory);
 
-      const existing = await taskRepo.findOne({ where: { id } });
+      const existing = await taskRepo.findOne({ where: { id }, relations: ['assignees'] });
       if (!existing) throw new NotFoundException('Task not found');
+
+      const previousAssigneeIds = (existing.assignees ?? []).map((assignee) => assignee.userId);
+      const beforeSnapshot = this.buildTaskSnapshot(existing, previousAssigneeIds);
+
+      // Prevent TypeORM from attempting to update relations via save
+      delete (existing as { assignees?: TaskAssignee[] }).assignees;
 
       if (dto.title !== undefined) existing.title = dto.title;
       if (dto.description !== undefined) existing.description = dto.description ?? null;
@@ -109,8 +142,22 @@ export class TasksService {
 
       await taskRepo.save(existing);
 
+      const nextAssigneeIds = assigneeIds ?? previousAssigneeIds;
+      const afterSnapshot = this.buildTaskSnapshot(existing, nextAssigneeIds);
+      const changedFields = this.diffSnapshots(beforeSnapshot, afterSnapshot);
+
       if (assigneeIds !== undefined) {
         await this.replaceAssignees(manager, id, assigneeIds);
+      }
+
+      if (Object.keys(changedFields).length > 0) {
+        await historyRepo.save(
+          historyRepo.create({
+            taskId: id,
+            type: TaskHistoryEventType.TASK_UPDATED,
+            payload: changedFields,
+          }),
+        );
       }
     });
 
@@ -156,6 +203,7 @@ export class TasksService {
     const comment = await this.tasksRepo.manager.transaction(async (manager) => {
       const taskRepo = manager.getRepository(Task);
       const commentRepo = manager.getRepository(Comment);
+      const historyRepo = manager.getRepository(TaskHistory);
 
       const taskExists = await taskRepo.findOne({ where: { id: taskId } });
       if (!taskExists) {
@@ -167,8 +215,22 @@ export class TasksService {
         authorId: dto.authorId ?? null,
         content,
       });
+      const saved = await commentRepo.save(entity);
 
-      return commentRepo.save(entity);
+      await historyRepo.save(
+        historyRepo.create({
+          taskId,
+          actorId: dto.authorId ?? null,
+          type: TaskHistoryEventType.COMMENT_CREATED,
+          payload: {
+            commentId: saved.id,
+            content: saved.content,
+            authorId: saved.authorId ?? null,
+          },
+        }),
+      );
+
+      return saved;
     });
 
     return this.toCommentResponse(comment);
@@ -247,5 +309,50 @@ export class TasksService {
     if (!exists) {
       throw new NotFoundException('Task not found');
     }
+  }
+
+  private buildTaskSnapshot(task: Task, assigneeIds: string[]): TaskSnapshot {
+    return {
+      title: task.title,
+      description: task.description ?? null,
+      status: task.status,
+      priority: task.priority,
+      dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+      assigneeIds: [...assigneeIds].sort(),
+    };
+  }
+
+  private diffSnapshots(
+    previous: TaskSnapshot,
+    next: TaskSnapshot,
+  ): Record<string, { from: unknown; to: unknown }> {
+    const changes: Record<string, { from: unknown; to: unknown }> = {};
+
+    const compare = <K extends keyof TaskSnapshot>(key: K) => {
+      const prevValue = previous[key];
+      const nextValue = next[key];
+      if (!this.areEqual(prevValue, nextValue)) {
+        changes[key] = {
+          from: prevValue,
+          to: nextValue,
+        };
+      }
+    };
+
+    compare('title');
+    compare('description');
+    compare('status');
+    compare('priority');
+    compare('dueDate');
+    compare('assigneeIds');
+
+    return changes;
+  }
+
+  private areEqual(a: unknown, b: unknown): boolean {
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return a.length === b.length && a.every((value, index) => value === b[index]);
+    }
+    return a === b;
   }
 }

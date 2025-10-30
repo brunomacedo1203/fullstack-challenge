@@ -13,19 +13,19 @@
 1. **Fase 1 — Monorepo e pacotes base** _(concluída)_
    - [x] Criar estrutura `apps/` e `packages/` conforme enunciado.
    - [x] Adicionar `packages/tsconfig`, `packages/eslint-config`, `packages/types`.
-   - **Commit sugerido:** `git commit -m "chore: bootstrap monorepo structure"`
+   - **Commit:** `chore: bootstrap monorepo structure`
 
 2. **Fase 2 — Docker e variáveis** _(concluída)_
    - [x] Copiar `docker-compose.yml` e criar Dockerfile para cada app.
    - [x] Criar `.env.example` mínimo em cada app.
-   - **Commit sugerido:** `git commit -m "chore: add docker setup and env samples"`
+   - **Commit:** `chore: add docker setup and env samples`
 
    _Checkpoint:_ Estrutura do monorepo definida com Dockerfiles e `.env` prontos.
 
 3. **Fase 3 — Validação da stack** _(concluída)_
    - [x] Rodar `docker compose up --build` e garantir containers de pé.
    - [x] Validar RabbitMQ UI e conexão Postgres (psql/DBeaver).
-   - **Commit sugerido:** `git commit -m "chore: validate local stack startup"`
+   - **Commit:** `chore: validate local stack startup`
 
 **Checkpoint:** Docker e containers rodando sem erros.
 
@@ -40,24 +40,24 @@
 1. **Fase 1 — Domínio de usuários** _(concluída)_
    - [x] Criar módulos `users` e `auth` no auth-service.
    - [x] Implementar entity `User` + migration `users`.
-   - **Commit sugerido:** `git commit -m "feat(auth-service): add user domain and migration"`
+   - **Commit:** `feat(auth-service): add user domain and migration`
 
 2. **Fase 2 — Fluxos de cadastro/login** _(concluída)_
    - [x] Hash de senha com bcrypt.
    - [x] Endpoints `POST /auth/register` e `POST /auth/login`.
-   - **Commit sugerido:** `git commit -m "feat(auth-service): implement register and login"`
+   - **Commit:** `feat(auth-service): implement register and login`
 
    _Checkpoint:_ Registro e login respondendo com tokens no auth-service.
 
 3. **Fase 3 — Refresh tokens e JWT** _(concluída)_
    - [x] Implementar JWT access/refresh + refresh token hash na tabela.
    - [x] Endpoint `POST /auth/refresh`.
-   - **Commit sugerido:** `git commit -m "feat(auth-service): add jwt refresh flow"`
+   - **Commit:** `feat(auth-service): add jwt refresh flow`
 
 4. **Fase 4 — QA e documentação** _(concluída)_
    - [x] Testar fluxos via Swagger (registro, login, refresh).
    - [x] Atualizar README com instruções básicas.
-   - **Commit sugerido:** `git commit -m "docs: document auth service setup"`
+   - **Commit:** `docs: document auth service setup`
 
 _Checkpoint:_ `/auth/register` e `/auth/login` retornam tokens válidos.
 
@@ -72,24 +72,24 @@ _Checkpoint:_ `/auth/register` e `/auth/login` retornam tokens válidos.
 1. **Fase 1 — Scaffold do Gateway** _(concluída)_
    - [x] Criar `apps/api-gateway` com módulos `auth` e `tasks`.
    - [x] Configurar HttpModule para comunicação com auth-service.
-   - **Commit sugerido:** `git commit -m "feat(api-gateway): scaffold auth and tasks modules"`
+   - **Commit:** `feat(api-gateway): scaffold auth and tasks modules`
 
 2. **Fase 2 — Integração com auth-service** _(concluída)_
    - [x] Proxies `/api/auth/*` (register/login/refresh).
    - [x] Validar fluxo de login via Gateway.
-   - **Commit sugerido:** `git commit -m "feat(api-gateway): proxy auth routes"`
+   - **Commit:** `feat(api-gateway): proxy auth routes`
 
    _Checkpoint:_ Fluxo completo de autenticação funcionando via `/api/auth/*`.
 
 3. **Fase 3 — Segurança e limites** _(concluída)_
    - [x] Guard JWT para `/api/tasks*`.
    - [x] Rate limiting (10 req/s) global.
-   - **Commit sugerido:** `git commit -m "feat(api-gateway): enforce jwt guard and rate limit"`
+   - **Commit:** `feat(api-gateway): enforce jwt guard and rate limit`
 
 4. **Fase 4 — Swagger e QA** _(concluída)_
    - [x] Swagger em `/api/docs` com auth + tasks.
    - [x] Testes end-to-end via Gateway.
-   - **Commit sugerido:** `git commit -m "docs(api-gateway): expose swagger and validate flows"`
+   - **Commit:** `docs(api-gateway): expose swagger and validate flows`
 
    _Checkpoint:_ Swagger exibe os 3 endpoints de auth; login funciona via Gateway.
 
@@ -103,29 +103,29 @@ _Checkpoint:_ `/auth/register` e `/auth/login` retornam tokens válidos.
 
 1. **Fase 1 — Setup inicial** _(concluída)_
    - [x] Criar módulo `tasks` e configurar `ConfigModule`/TypeORM.
-   - **Commit sugerido:** `git commit -m "feat(tasks-service): initial setup and module creation"`
+   - **Commit:** `feat(tasks-service): initial setup and module creation`
 
 2. **Fase 2 — Entidades e DTOs** _(concluída)_
    - [x] Criar `Task`, `TaskAssignee` e DTOs `CreateTaskDto`/`UpdateTaskDto`.
-   - **Commit sugerido:** `git commit -m "feat(tasks-service): add task entities and dto"`
+   - **Commit:** `feat(tasks-service): add task entities and dto`
 
 3. **Fase 3 — CRUD interno** _(concluída)_
    - [x] Implementar `GET/POST/PUT/DELETE /tasks` com paginação + validações.
-   - **Commit sugerido:** `git commit -m "feat(tasks-service): implement task crud"`
+   - **Commit:** `feat(tasks-service): implement task crud`
 
    _Checkpoint:_ CRUD de tarefas funcional diretamente no tasks-service.
 
 4. **Fase 4 — Integração com Gateway** _(concluída)_
    - [x] Proxies `/api/tasks*` com JWT guard + tests end-to-end.
-   - **Commit sugerido:** `git commit -m "feat(api-gateway): proxy task routes"`
+   - **Commit:** `feat(api-gateway): proxy task routes`
 
 5. **Fase 5 — Migrations e QA** _(concluída)_
    - [x] Adicionar migrations (`tasks`, `task_assignees`) e validar via Gateway.
-   - **Commit sugerido:** `git commit -m "chore(tasks-service): add tasks migrations"`
+   - **Commit:** `chore(tasks-service): add tasks migrations`
 
 6. **Fase 6 — Documentação** _(concluída)_
    - [x] Atualizar checklist/README com instruções.
-   - **Commit sugerido:** `git commit -m "docs(tasks-service): document task service"`
+   - **Commit:** `docs(tasks-service): document task service`
 
 ---
 
@@ -145,61 +145,40 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
    - [x] Criar `Comment` e `TaskHistory` relacionados a `Task`.
    - [x] Adicionar migration para tabelas `comments` e `task_history` + enum de eventos.
    - [x] Definir contratos de eventos em `packages/types`.
-   - **Commit sugerido:**
-     ```bash
-     git commit -m "feat(tasks-service): add comments history schema and event contracts"
-     ```
+   - **Commit:** `feat(tasks-service): add comments history schema and event contracts`
 
-2. **Fase 2 — Endpoints de comentários**
-   - [ ] `POST /tasks/:id/comments` (criação com validações e transação).
-   - [ ] `GET /tasks/:id/comments?page=&size=` (listagem paginada).
-   - **Commit sugerido:**
-     ```bash
-     git commit -m "feat(tasks-service): implement comment endpoints"
-     ```
+2. **Fase 2 — Endpoints de comentários** _(concluída)_
+   - [x] `POST /tasks/:id/comments` (criação com validações e transação).
+   - [x] `GET /tasks/:id/comments?page=&size=` (listagem paginada).
+   - **Commit:** `feat(tasks-service): implement comment endpoints`
 
    _Checkpoint:_ Comentários podem ser criados e listados via tasks-service.
 
 3. **Fase 3 — Audit log de tarefas**
    - [ ] Registrar `TASK_CREATED`, `TASK_UPDATED`, `COMMENT_CREATED` em `task_history` com payloads.
-   - **Commit sugerido:**
-     ```bash
-     git commit -m "feat(tasks-service): add audit log for task changes"
-     ```
+   - **Commit:** `feat(tasks-service): add audit log for task changes`
 
 4. **Fase 4 — Eventos RabbitMQ**
    - [ ] Publicar eventos `task.created`, `task.updated`, `task.comment.created` (exchange `tasks.events`).
-   - **Commit sugerido:**
-     ```bash
-     git commit -m "feat(tasks-service): publish task events to RabbitMQ"
-     ```
+   - **Commit:** `feat(tasks-service): publish task events to RabbitMQ`
 
    _Checkpoint:_ Eventos `tasks.events` publicados e visíveis na RabbitMQ UI.
 
 5. **Fase 5 — Gateway & contexto do usuário**
    - [ ] Proxies `/api/tasks/:id/comments` (POST/GET) com DTOs/documentação.
    - [ ] Encaminhar `X-User-Id` do JWT para o tasks-service.
-   - **Commit sugerido:**
-     ```bash
-     git commit -m "feat(api-gateway): proxy task comments with user context"
-     ```
+   - **Commit:** `feat(api-gateway): proxy task comments with user context`
 
    _Checkpoint:_ Comentários acessíveis pelo Gateway com usuário autenticado propagado ao serviço.
 
 6. **Fase 6 — Testes e validação**
    - [ ] Executar migrations e cenários completos via Swagger (auth → tasks → comments → eventos).
    - [ ] Verificar mensagens na RabbitMQ UI (`tasks.events`).
-   - **Commit sugerido:**
-     ```bash
-     git commit -m "chore(tasks-service): validate comments and events end-to-end"
-     ```
+   - **Commit:** `chore(tasks-service): validate comments and events end-to-end`
 
 7. **Fase 7 — Documentação**
    - [ ] Atualizar README e checklist com novas rotas/eventos.
-   - **Commit sugerido:**
-     ```bash
-     git commit -m "docs: document task events and comments"
-     ```
+   - **Commit:** `docs: document task events and comments`
 
 ---
 
