@@ -34,7 +34,7 @@
   - [x] `POST /auth/register`
   - [x] `POST /auth/login`
   - [x] `POST /auth/refresh`
-- [x] Testar fluxos via Postman (registro, login, refresh)
+- [x] Testar fluxos via Swagger (registro, login, refresh)
 - [x] Atualizar README com instruções básicas
 
 **Checkpoint:** `/auth/register` e `/auth/login` retornam tokens válidos.
