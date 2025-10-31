@@ -4,6 +4,7 @@ import * as jwt from 'jsonwebtoken';
 import type { Server as WSServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import { ConfigService } from '@nestjs/config';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const LOGGER_CONTEXT = 'WsGateway';
 
@@ -24,9 +25,17 @@ export class WsGateway {
   // userId -> Set of sockets
   private readonly socketsByUser = new Map<string, Set<WsClient>>();
 
-  constructor(@Inject(ConfigService) config: ConfigService) {
+  constructor(
+    @Inject(ConfigService) config: ConfigService,
+    private readonly notifications: NotificationsService,
+  ) {
     this.path = config.get<string>('WS_PATH', '/ws');
-    this.jwtSecret = config.get<string>('JWT_SECRET', 'dev-secret');
+    // Prefer the same secret used by the API gateway access token
+    // Fallback to legacy JWT_SECRET for compatibility
+    this.jwtSecret = config.get<string>(
+      'JWT_ACCESS_SECRET',
+      config.get<string>('JWT_SECRET', 'change-me-access'),
+    );
   }
 
   afterInit(server: WSServer): void {
@@ -52,6 +61,26 @@ export class WsGateway {
         }
         socket.userId = userId;
         this.trackSocket(userId, socket);
+
+        // Send recent unread notifications on connect (best-effort)
+        this.notifications
+          .listUnread(userId, 10)
+          .then((items) => {
+            for (const item of items) {
+              this.sendToSocket(socket, 'notification:unread', {
+                id: item.id,
+                type: item.type,
+                taskId: item.taskId,
+                commentId: item.commentId,
+                title: item.title,
+                body: item.body,
+                createdAt: item.createdAt,
+              });
+            }
+          })
+          .catch((err) =>
+            Logger.warn(`Failed to fetch unread for ${userId}: ${String(err)}`, LOGGER_CONTEXT),
+          );
 
         socket.on('close', () => this.untrackSocket(userId, socket));
         socket.on('error', (err) =>
@@ -80,6 +109,14 @@ export class WsGateway {
           Logger.warn(`Failed to send to ${userId}: ${(error as Error).message}`, LOGGER_CONTEXT);
         }
       }
+    }
+  }
+
+  private sendToSocket(socket: WsClient, event: string, data: unknown): void {
+    try {
+      socket.send(JSON.stringify({ event, data }));
+    } catch (error) {
+      Logger.warn(`Failed to send to socket: ${(error as Error).message}`, LOGGER_CONTEXT);
     }
   }
 

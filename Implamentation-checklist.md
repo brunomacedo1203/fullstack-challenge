@@ -202,7 +202,7 @@ _Checkpoint:_ Criar/editar/excluir tarefas via `/api/tasks`.
 
 2. **Fase 2 — Consumer RabbitMQ (fila e bindings)**
    - [x] Declarar fila durável `notifications.q` (ou valor de `NOTIFS_QUEUE`).
-   - [x] Bind ao exchange `tasks.events` com `task.*` (ou `task.#`).
+   - [x] Bind ao exchange `tasks.events` com `task.#` (suporte a múltiplos padrões via `,`).
    - [x] Configurar `prefetch(10)` e ACK manual; DLX `tasks.dlx` + `notifications.dlq` (opcional).
    - [x] Logar mensagens recebidas (routingKey + payload resumido).
    - **Commit:** `feat(notifications-service): setup RabbitMQ consumer`
@@ -217,40 +217,48 @@ _Checkpoint:_ Fila ligada e consumo visível na RabbitMQ UI.
 
 4. **Fase 4 — Destinatários e persistência**
    - [x] Resolver destinatários: criador + assignees (filtrar `actorId`/`authorId` para não notificar a si mesmo).
+   - [x] Persistência durável de participantes em `task_participants` (upsert de criador/assignees por tarefa).
    - [x] Schema `notifications`: `id`, `recipient_id`, `type`, `task_id`, `comment_id?`, `title`, `body`, `read_at`, `created_at`.
-   - [x] Migration + índices em `(recipient_id, read_at)` e `(recipient_id, created_at desc)`.
+   - [x] Migration + índices em `(recipient_id, read_at)` e `(recipient_id, created_at desc)`; habilita `uuid-ossp` e usa `uuid_generate_v4()`.
    - [x] Persistir notificações ao consumir eventos.
    - **Commit:** `feat(notifications-service): handle and store notifications`
 
 _Checkpoint:_ Notificações salvas e auditáveis por usuário no banco.
 
 5. **Fase 5 — WebSocket Gateway**
-   - [x] Implementar WS em `/ws` com JWT no handshake (`?token=`) usando a mesma `JWT_SECRET` do Gateway.
+   - [x] Implementar WS em `/ws` com JWT no handshake (`?token=`) usando o mesmo segredo do access token do Gateway (`JWT_ACCESS_SECRET`, com fallback para `JWT_SECRET`); gateway anotado com `@WebSocketGateway` e validação do path.
    - [x] Mapear `userId -> sockets[]` e limpeza em `disconnect`.
    - [x] Padronizar eventos emitidos: `task:created`, `task:updated`, `comment:new`.
    - **Commit:** `feat(notifications-service): implement WebSocket gateway and JWT auth`
 
 6. **Fase 6 — Entrega em tempo real e sincronização**
-   - [ ] Ao consumir evento, emitir aos sockets online dos destinatários.
-   - [ ] Se persistência ativa, ao conectar enviar não lidas (últimas N) e marcar como entregues quando apropriado.
-   - [ ] Endpoint opcional `GET /notifications` (paginado) para debug/local.
+   - [x] Ao consumir evento, emitir aos sockets online dos destinatários.
+   - [x] Se persistência ativa, ao conectar enviar não lidas (últimas N).
+   - [x] Endpoint opcional `GET /notifications` (paginado) para debug/local.
    - **Commit:** `feat(notifications-service): wire consumer to ws and unread sync`
 
 _Checkpoint:_ Backend emite notificações em tempo real e sincroniza pendentes no connect.
 
 7. **Fase 7 — Observabilidade e QA**
-   - [ ] Logs estruturados por tipo de evento e métricas (contagem por `routingKey`).
-   - [ ] Teste E2E: 2 usuários (A e B) — A cria/atualiza/comenta; B recebe apenas o que lhe pertence.
-   - [ ] Scripts de debug no README (wscat/HTML simples para conectar com token).
+   - [x] Logs estruturados por tipo de evento e métricas (contagem por `routingKey`).
+   - [x] Teste E2E: 2 usuários (A e B) — A cria/atualiza/comenta; B recebe apenas o que lhe pertence.
+   - [x] Scripts de debug no README (wscat/HTML simples para conectar com token).
    - **Commit:** `chore(notifications-service): e2e validation and debug docs`
 
 8. **Fase 8 — Documentação**
-   - [ ] Atualizar README/checklist com envs, endpoints/WS e passos de teste.
+   - [x] Atualizar README/checklist com envs, endpoints/WS e passos de teste.
    - **Commit:** `docs: document notifications service and websocket usage`
 
 ---
 
 **Checkpoint:** Backend envia notificações em tempo real para destinatários corretos.
+
+9. **Fase 9 — Polimentos**
+   - [x] Tornar `size` opcional no `GET /notifications` com `ParseIntPipe({ optional: true })`.
+   - [x] Alinhar segredo do WebSocket com o access token do Gateway (`JWT_ACCESS_SECRET`, fallback `JWT_SECRET`).
+   - [x] Remover imports não utilizados e avisos de lint no notifications-service.
+   - [x] Atualizar `apps/notifications-service/.env.example` com `JWT_ACCESS_SECRET`.
+   - **Commit:** `chore(notifications-service): polish ws secret, controller and env`
 
 ---
 

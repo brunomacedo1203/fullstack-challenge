@@ -5,7 +5,7 @@ import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
-import { Notification } from './notifications/notification.entity';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -31,6 +31,7 @@ import { Notification } from './notifications/notification.entity';
     HealthModule,
     NotificationsModule,
     RealtimeModule,
+    MetricsModule,
     EventsModule,
   ],
 })

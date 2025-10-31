@@ -192,6 +192,21 @@ Regras principais e integrações:
 
 - Notifications/WebSocket permanecem planejados para o Dia 6.
 
+### Notifications WebSocket (Dia 6)
+
+- Gateway WS: `ws://localhost:3004/ws?token=<JWT>` (usa o mesmo segredo do access token do Gateway via `JWT_ACCESS_SECRET` — mantém fallback para `JWT_SECRET`)
+- Eventos emitidos para usuários destinatários:
+  - `task:created`
+  - `task:updated`
+  - `comment:new`
+- Ao conectar, o servidor envia as últimas não lidas como `notification:unread` (até 10).
+
+Exemplo rápido com wscat:
+
+```bash
+npx wscat -c "ws://localhost:3004/ws?token=$ACCESS_TOKEN"
+```
+
 ---
 
 ## ⚖️ Decisões & Trade-offs
