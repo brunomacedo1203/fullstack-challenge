@@ -69,6 +69,7 @@ services:
     ports:
       - '3004:3004'
     depends_on:
+      - db
       - rabbitmq
     networks:
       - challenge-network

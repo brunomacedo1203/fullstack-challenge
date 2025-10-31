@@ -8,6 +8,7 @@ import {
   TaskUpdatedEvent,
 } from '@jungle/types';
 import { InvalidTaskEventError, parseTaskEvent } from './task-event.parser';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const LOGGER_CONTEXT = 'TasksEventsConsumer';
 const MAX_LOG_PAYLOAD_LENGTH = 200;
@@ -22,7 +23,10 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
   private readonly deadLetterExchange?: string;
   private readonly handlers: Record<TaskEvent['type'], (event: TaskEvent) => Promise<void>>;
 
-  constructor(@Inject(ConfigService) private readonly configService: ConfigService) {
+  constructor(
+    @Inject(ConfigService) private readonly configService: ConfigService,
+    private readonly notifications: NotificationsService,
+  ) {
     this.exchange = this.configService.get<string>('TASKS_EVENTS_EXCHANGE', 'tasks.events');
     this.queue = this.configService.get<string>('NOTIFICATIONS_QUEUE', 'notifications.q');
     this.routingPattern = this.configService.get<string>('TASKS_EVENTS_ROUTING', 'task.#');
@@ -150,25 +154,14 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleTaskCreated(event: TaskCreatedEvent): Promise<void> {
-    Logger.log(
-      `Handled task.created for task ${event.taskId} with ${event.payload.assigneeIds.length} assignees`,
-      LOGGER_CONTEXT,
-    );
+    await this.notifications.handleTaskCreated(event);
   }
 
   private async handleTaskUpdated(event: TaskUpdatedEvent): Promise<void> {
-    Logger.log(
-      `Handled task.updated for task ${event.taskId} (changed fields: ${
-        Object.keys(event.payload.changedFields).join(', ') || 'none'
-      })`,
-      LOGGER_CONTEXT,
-    );
+    await this.notifications.handleTaskUpdated(event);
   }
 
   private async handleTaskCommentCreated(event: TaskCommentCreatedEvent): Promise<void> {
-    Logger.log(
-      `Handled task.comment.created for task ${event.taskId} (comment ${event.payload.commentId})`,
-      LOGGER_CONTEXT,
-    );
+    await this.notifications.handleTaskCommentCreated(event);
   }
 }

@@ -73,10 +73,12 @@ test('handleMessage ACKs the message when processing succeeds', async (t) => {
   });
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
-  const consumer = new TasksEventsConsumer(createConfigService());
-
-  const dispatchEvent = mock.fn(async () => undefined);
-  (consumer as any).dispatchEvent = dispatchEvent;
+  const notifications = {
+    handleTaskCreated: mock.fn(async () => undefined),
+    handleTaskUpdated: mock.fn(async () => undefined),
+    handleTaskCommentCreated: mock.fn(async () => undefined),
+  } as Record<string, unknown>;
+  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any);
 
   const ack = mock.fn(() => undefined) as AckFn;
   const nack = mock.fn(() => undefined) as AckFn;
@@ -85,17 +87,7 @@ test('handleMessage ACKs the message when processing succeeds', async (t) => {
 
   assert.strictEqual(ack.mock.calls.length, 1);
   assert.strictEqual(nack.mock.calls.length, 0);
-  assert.strictEqual(dispatchEvent.mock.calls.length, 1);
-  const firstCall = dispatchEvent.mock.calls[0];
-  if (!firstCall) {
-    throw new Error('dispatchEvent was not invoked');
-  }
-  const args = (firstCall.arguments ?? []) as unknown[];
-  const eventArg = args[0];
-  if (!eventArg || typeof eventArg !== 'object') {
-    throw new Error('dispatchEvent received invalid payload');
-  }
-  assert.strictEqual((eventArg as { type: string }).type, 'task.created');
+  assert.strictEqual((notifications.handleTaskCreated as any).mock.calls.length, 1);
 });
 
 test('handleMessage NACKs the message when ACK throws', async (t) => {
@@ -116,10 +108,12 @@ test('handleMessage NACKs the message when ACK throws', async (t) => {
   });
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
-  const consumer = new TasksEventsConsumer(createConfigService());
-
-  const dispatchEvent = mock.fn(async () => undefined);
-  (consumer as any).dispatchEvent = dispatchEvent;
+  const notifications = {
+    handleTaskCreated: mock.fn(async () => undefined),
+    handleTaskUpdated: mock.fn(async () => undefined),
+    handleTaskCommentCreated: mock.fn(async () => undefined),
+  } as Record<string, unknown>;
+  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any);
 
   const ackError = new Error('ack failure');
   const ack = mock.fn(() => {
@@ -133,7 +127,7 @@ test('handleMessage NACKs the message when ACK throws', async (t) => {
   assert.strictEqual(nack.mock.calls.length, 1);
   assert.strictEqual(nack.mock.calls[0].arguments?.[0], ack.mock.calls[0].arguments?.[0]);
   assert.strictEqual(nack.mock.calls[0].arguments?.[2], false);
-  assert.strictEqual(dispatchEvent.mock.calls.length, 1);
+  assert.strictEqual((notifications.handleTaskCreated as any).mock.calls.length, 1);
 });
 
 test('handleMessage NACKs invalid payloads without calling dispatch', async (t) => {
@@ -157,13 +151,15 @@ test('handleMessage NACKs invalid payloads without calling dispatch', async (t) 
   });
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
-  const consumer = new TasksEventsConsumer(createConfigService());
+  const notifications = {
+    handleTaskCreated: mock.fn(async () => undefined),
+    handleTaskUpdated: mock.fn(async () => undefined),
+    handleTaskCommentCreated: mock.fn(async () => undefined),
+  } as Record<string, unknown>;
+  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any);
 
   const ack = mock.fn(() => undefined) as AckFn;
   const nack = mock.fn(() => undefined) as AckFn;
-
-  const dispatchEvent = mock.fn(async () => undefined);
-  (consumer as any).dispatchEvent = dispatchEvent;
 
   const invalidMessage = {
     fields: { routingKey: 'task.created' },
@@ -175,5 +171,5 @@ test('handleMessage NACKs invalid payloads without calling dispatch', async (t) 
   assert.strictEqual(ack.mock.calls.length, 0);
   assert.strictEqual(nack.mock.calls.length, 1);
   assert.strictEqual(nack.mock.calls[0].arguments?.[2], false);
-  assert.strictEqual(dispatchEvent.mock.calls.length, 0);
+  assert.strictEqual((notifications.handleTaskCreated as any).mock.calls.length, 0);
 });

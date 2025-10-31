@@ -216,18 +216,18 @@ _Checkpoint:_ Fila ligada e consumo visível na RabbitMQ UI.
    - **Commit:** `feat(notifications-service): add event router and validation`
 
 4. **Fase 4 — Destinatários e persistência**
-   - [ ] Resolver destinatários: criador + assignees (filtrar `actorId` para não notificar a si mesmo).
-   - [ ] Schema `notifications`: `id`, `recipient_id`, `type`, `task_id`, `comment_id?`, `title`, `body`, `read_at`, `created_at`.
-   - [ ] Migration + índices em `(recipient_id, read_at)` e `(recipient_id, created_at desc)`.
-   - [ ] Persistir notificações ao consumir eventos.
+   - [x] Resolver destinatários: criador + assignees (filtrar `actorId`/`authorId` para não notificar a si mesmo).
+   - [x] Schema `notifications`: `id`, `recipient_id`, `type`, `task_id`, `comment_id?`, `title`, `body`, `read_at`, `created_at`.
+   - [x] Migration + índices em `(recipient_id, read_at)` e `(recipient_id, created_at desc)`.
+   - [x] Persistir notificações ao consumir eventos.
    - **Commit:** `feat(notifications-service): handle and store notifications`
 
 _Checkpoint:_ Notificações salvas e auditáveis por usuário no banco.
 
 5. **Fase 5 — WebSocket Gateway**
-   - [ ] Implementar WS em `/ws` com JWT no handshake (`?token=`) usando a mesma `JWT_SECRET` do Gateway.
-   - [ ] Mapear `userId -> sockets[]` e limpeza em `disconnect`.
-   - [ ] Padronizar eventos emitidos: `task:created`, `task:updated`, `comment:new`.
+   - [x] Implementar WS em `/ws` com JWT no handshake (`?token=`) usando a mesma `JWT_SECRET` do Gateway.
+   - [x] Mapear `userId -> sockets[]` e limpeza em `disconnect`.
+   - [x] Padronizar eventos emitidos: `task:created`, `task:updated`, `comment:new`.
    - **Commit:** `feat(notifications-service): implement WebSocket gateway and JWT auth`
 
 6. **Fase 6 — Entrega em tempo real e sincronização**
