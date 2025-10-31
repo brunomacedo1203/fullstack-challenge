@@ -9,6 +9,8 @@ import {
 } from '@jungle/types';
 import { InvalidTaskEventError, parseTaskEvent } from './task-event.parser';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MetricsService } from '../metrics/metrics.service';
+import { WsGateway } from '../realtime/ws.gateway';
 
 const LOGGER_CONTEXT = 'TasksEventsConsumer';
 const MAX_LOG_PAYLOAD_LENGTH = 200;
@@ -26,6 +28,8 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
   constructor(
     @Inject(ConfigService) private readonly configService: ConfigService,
     private readonly notifications: NotificationsService,
+    private readonly ws: WsGateway,
+    private readonly metrics: MetricsService,
   ) {
     this.exchange = this.configService.get<string>('TASKS_EVENTS_EXCHANGE', 'tasks.events');
     this.queue = this.configService.get<string>('NOTIFICATIONS_QUEUE', 'notifications.q');
@@ -113,16 +117,27 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
     const { routingKey } = message.fields;
     const payload = message.content.toString('utf-8');
 
+    this.metrics.incrementReceived(routingKey);
+
     const preview =
       payload.length > MAX_LOG_PAYLOAD_LENGTH
         ? `${payload.slice(0, MAX_LOG_PAYLOAD_LENGTH)}…`
         : payload;
 
-    Logger.log(`Received ${routingKey}: ${preview}`, LOGGER_CONTEXT);
+    Logger.log(
+      JSON.stringify({
+        msg: 'event_received',
+        routingKey,
+        preview,
+        timestamp: new Date().toISOString(),
+      }),
+      LOGGER_CONTEXT,
+    );
 
     try {
       const event = parseTaskEvent(routingKey, payload);
       await this.dispatchEvent(event);
+      this.metrics.incrementProcessed(event.type);
       channel.ack(message);
     } catch (error) {
       const reason =
@@ -130,7 +145,17 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
           ? error.message
           : 'Unknown error';
 
-      Logger.error(`Failed to process ${routingKey}: ${reason}`, undefined, LOGGER_CONTEXT);
+      Logger.error(
+        JSON.stringify({
+          msg: 'event_failed',
+          routingKey,
+          reason,
+          timestamp: new Date().toISOString(),
+        }),
+        undefined,
+        LOGGER_CONTEXT,
+      );
+      this.metrics.incrementFailed(routingKey);
 
       try {
         channel.nack(message, false, false);
@@ -154,14 +179,23 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleTaskCreated(event: TaskCreatedEvent): Promise<void> {
-    await this.notifications.handleTaskCreated(event);
+    const recipients = await this.notifications.handleTaskCreated(event);
+    if (recipients.length > 0) {
+      this.ws.emitToUsers('task:created', event, recipients);
+    }
   }
 
   private async handleTaskUpdated(event: TaskUpdatedEvent): Promise<void> {
-    await this.notifications.handleTaskUpdated(event);
+    const recipients = await this.notifications.handleTaskUpdated(event);
+    if (recipients.length > 0) {
+      this.ws.emitToUsers('task:updated', event, recipients);
+    }
   }
 
   private async handleTaskCommentCreated(event: TaskCommentCreatedEvent): Promise<void> {
-    await this.notifications.handleTaskCommentCreated(event);
+    const recipients = await this.notifications.handleTaskCommentCreated(event);
+    if (recipients.length > 0) {
+      this.ws.emitToUsers('comment:new', event, recipients);
+    }
   }
 }

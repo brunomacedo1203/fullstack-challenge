@@ -74,11 +74,12 @@ test('handleMessage ACKs the message when processing succeeds', async (t) => {
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
   const notifications = {
-    handleTaskCreated: mock.fn(async () => undefined),
-    handleTaskUpdated: mock.fn(async () => undefined),
-    handleTaskCommentCreated: mock.fn(async () => undefined),
+    handleTaskCreated: mock.fn(async () => []),
+    handleTaskUpdated: mock.fn(async () => []),
+    handleTaskCommentCreated: mock.fn(async () => []),
   } as Record<string, unknown>;
-  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any);
+  const ws = { emitToUsers: mock.fn(() => undefined) } as Record<string, unknown>;
+  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any, ws as any);
 
   const ack = mock.fn(() => undefined) as AckFn;
   const nack = mock.fn(() => undefined) as AckFn;
@@ -109,11 +110,12 @@ test('handleMessage NACKs the message when ACK throws', async (t) => {
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
   const notifications = {
-    handleTaskCreated: mock.fn(async () => undefined),
-    handleTaskUpdated: mock.fn(async () => undefined),
-    handleTaskCommentCreated: mock.fn(async () => undefined),
+    handleTaskCreated: mock.fn(async () => []),
+    handleTaskUpdated: mock.fn(async () => []),
+    handleTaskCommentCreated: mock.fn(async () => []),
   } as Record<string, unknown>;
-  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any);
+  const ws = { emitToUsers: mock.fn(() => undefined) } as Record<string, unknown>;
+  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any, ws as any);
 
   const ackError = new Error('ack failure');
   const ack = mock.fn(() => {
@@ -152,11 +154,12 @@ test('handleMessage NACKs invalid payloads without calling dispatch', async (t) 
 
   const { TasksEventsConsumer } = await import('./tasks-events.consumer');
   const notifications = {
-    handleTaskCreated: mock.fn(async () => undefined),
-    handleTaskUpdated: mock.fn(async () => undefined),
-    handleTaskCommentCreated: mock.fn(async () => undefined),
+    handleTaskCreated: mock.fn(async () => []),
+    handleTaskUpdated: mock.fn(async () => []),
+    handleTaskCommentCreated: mock.fn(async () => []),
   } as Record<string, unknown>;
-  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any);
+  const ws = { emitToUsers: mock.fn(() => undefined) } as Record<string, unknown>;
+  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any, ws as any);
 
   const ack = mock.fn(() => undefined) as AckFn;
   const nack = mock.fn(() => undefined) as AckFn;
