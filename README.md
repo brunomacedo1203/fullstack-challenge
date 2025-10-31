@@ -3,13 +3,14 @@
 Este repositório contém a implementação incremental do **Desafio Full-Stack da Jungle Gaming**.  
 O objetivo é entregar um **sistema colaborativo de gestão de tarefas** composto por múltiplos serviços NestJS, um API Gateway, uma aplicação React e comunicação assíncrona via RabbitMQ.
 
-> **Status atual (Fim do Dia 4):**
+> **Status atual (Fim do Dia 6):**
 >
 > - ✅ Infraestrutura Docker e Turborepo operacionais
 > - ✅ Auth Service completo (cadastro, login, refresh token, bcrypt, TypeORM/Postgres)
 > - ✅ API Gateway com proteção JWT, rate limiting, Swagger e rotas proxy para auth e tasks
-> - ✅ Tasks Service com CRUD completo de tarefas + paginação, validações rigorosas e migrations
-> - ⏳ Notificações, comentários, histórico e frontend em desenvolvimento (Dias 5+)
+> - ✅ Tasks Service com CRUD completo de tarefas, comentários, histórico, paginação e migrations
+> - ✅ Notifications Service consumindo eventos via RabbitMQ e emitindo WebSocket em tempo real
+> - ⏳ Frontend em desenvolvimento (a partir do Dia 7)
 
 ---
 
@@ -27,7 +28,7 @@ O objetivo é entregar um **sistema colaborativo de gestão de tarefas** compost
 ┌──────────────────────────────┼─────────────────────────────┐
 │        Serviços internos NestJS + Postgres + RabbitMQ      │
 │  ┌─────────────┐    ┌────────────────┐       ┌───────────┐ │
-│  │ Auth Service│    │ Tasks Service  │       │ Notifications│ (backlog)
+│  │ Auth Service│    │ Tasks Service  │       │ Notifications │
 │  └──────┬──────┘    └───────┬────────┘       └───────┬───┘ │
 │         │ JWT & Users       │ CRUD + Assignees         │    │
 │         │                   │                          │    │
@@ -89,15 +90,15 @@ docker compose up --build
 
 **Serviços expostos:**
 
-| Serviço              | Porta | URL                                  |
-| -------------------- | ----- | ------------------------------------ |
-| Web (WIP)            | 3000  | http://localhost:3000                |
-| API Gateway          | 3001  | http://localhost:3001                |
-| Swagger (Gateway)    | —     | http://localhost:3001/api/docs       |
-| Auth Service         | 3002  | http://localhost:3002                |
-| Tasks Service        | 3003  | http://localhost:3003                |
-| Notifications (stub) | 3004  | http://localhost:3004                |
-| RabbitMQ UI          | 15672 | http://localhost:15672 (admin/admin) |
+| Serviço               | Porta | URL                                  |
+| --------------------- | ----- | ------------------------------------ |
+| Web (WIP)             | 3000  | http://localhost:3000                |
+| API Gateway           | 3001  | http://localhost:3001                |
+| Swagger (Gateway)     | —     | http://localhost:3001/api/docs       |
+| Auth Service          | 3002  | http://localhost:3002                |
+| Tasks Service         | 3003  | http://localhost:3003                |
+| Notifications Service | 3004  | http://localhost:3004                |
+| RabbitMQ UI           | 15672 | http://localhost:15672 (admin/admin) |
 
 ---
 
@@ -111,6 +112,9 @@ docker compose exec auth-service npm run migration:run --workspace=@jungle/auth-
 
 # Tasks
 docker compose exec tasks-service npm run migration:run --workspace=@jungle/tasks-service
+
+# Notifications
+docker compose exec notifications-service npm run migration:run --workspace=@jungle/notifications-service
 ```
 
 ---
@@ -190,7 +194,7 @@ Regras principais e integrações:
   docker compose exec rabbitmq rabbitmqadmin -u admin -p admin delete queue name=debug-tasks-events
   ```
 
-- Notifications/WebSocket permanecem planejados para o Dia 6.
+- Notifications/WebSocket implementados no Dia 6 (ver seção abaixo para detalhes do WS e testes com wscat).
 
 ### Notifications WebSocket (Dia 6)
 

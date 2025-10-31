@@ -264,165 +264,190 @@ _Checkpoint:_ Backend emite notificações em tempo real e sincroniza pendentes 
 
 ## 🗓️ Dia 7 — Frontend (Setup + Auth)
 
-**Meta:** Criar base React + TanStack Router + login/register funcionando.
+**Meta:** Criar a base do app React com autenticação e integração com o API Gateway.
 
 ---
 
-### 🔹 Subtasks
+### 🔹 Fases & Subtasks
 
-1. **Setup inicial**
-   - [ ] Criar projeto React em `apps/web`.
-   - [ ] Configurar Tailwind + shadcn/ui.
-   - **Commit:**
-     ```bash
-     git commit -m "feat(web): initial React setup with Tailwind and shadcn/ui"
+1. **Fase 1 — Estrutura e ferramentas**
+   - [ ] Criar projeto React em `apps/web` com Vite ou CRA (conforme monorepo).
+   - [ ] Instalar e configurar:
+     - Tailwind CSS
+     - shadcn/ui
+     - TanStack Router
+     - Axios (ou Fetch wrapper)
+   - [ ] Criar estrutura de pastas:
      ```
-
-2. **Auth**
-   - [ ] Criar store Zustand (tokens e user).
-   - [ ] Páginas:
-     - `/login`
-     - `/register`
-   - **Commit:**
-     ```bash
-     git commit -m "feat(web): implement login and register pages with Zustand store"
+     apps/web/src/
+     ├── routes/
+     ├── components/
+     ├── features/auth/
+     ├── hooks/
+     └── lib/
      ```
+   - **Commit:** `feat(web): initial setup with Tailwind, shadcn/ui and router`
 
-3. **Guards**
-   - [ ] Rotas protegidas (redirect se não logado).
-   - [ ] Testar com Gateway `/api/auth`.
-   - **Commit:**
-     ```bash
-     git commit -m "feat(web): add route guards and API integration"
-     ```
+   _Checkpoint:_ App React roda localmente com Tailwind/shadcn/router e layout base.
 
----
+2. **Fase 2 — Autenticação**
+   - [ ] Criar store Zustand (`useAuthStore`) para tokens e dados do usuário.
+   - [ ] Implementar helpers para login/logout (`auth.api.ts`).
+   - [ ] Criar páginas:
+     - `/login` — formulário com validação, integração com `/api/auth/login`.
+     - `/register` — formulário com integração `/api/auth/register`.
+   - [ ] Testar fluxo completo via API Gateway.
+   - **Commit:** `feat(web): implement login and register pages with Zustand store`
 
-**Checkpoint:** Login/register no front funcionando e tokens armazenados.
+   _Checkpoint:_ É possível registrar e logar via Gateway; tokens são salvos no store.
+
+3. **Fase 3 — Guards e contexto global**
+   - [ ] Criar HOC ou hook `useAuthGuard` para rotas protegidas.
+   - [ ] Redirecionar usuário não autenticado para `/login`.
+   - [ ] Exibir nome ou avatar do usuário autenticado no header.
+   - **Commit:** `feat(web): add route guards and global auth context`
+
+   _Checkpoint:_ Rotas privadas bloqueiam anônimos e redirecionam corretamente.
+
+4. **Fase 4 — QA e polimento**
+   - [ ] Testar fluxo completo no navegador.
+   - [ ] Corrigir problemas de CORS ou baseURL do Axios.
+   - [ ] Atualizar `.env.example` e README.
+   - **Commit:** `chore(web): validate auth flow and document env setup`
+
+**Checkpoint (do dia):** Login/register funcionando via Gateway; tokens persistem (Zustand/localStorage).
 
 ---
 
 ## 🗓️ Dia 8 — Frontend (Tasks List + Detalhe + Comments)
 
-**Meta:** CRUD visual de tarefas e comentários com feedbacks de UI.
+**Meta:** Criar interface de tarefas com CRUD visual e comentários integrados.
 
 ---
 
-### 🔹 Subtasks
+### 🔹 Fases & Subtasks
 
-1. **Listagem**
-   - [ ] Integrar TanStack Query `/api/tasks`.
-   - [ ] Paginação, filtros e busca.
-   - **Commit:**
-     ```bash
-     git commit -m "feat(web): implement tasks list with filters and pagination"
-     ```
+1. **Fase 1 — Lista de tarefas**
+   - [ ] Criar rota `/tasks`.
+   - [ ] Integrar TanStack Query com `/api/tasks`.
+   - [ ] Adicionar paginação, filtros e busca.
+   - [ ] Implementar tabela responsiva (shadcn/ui Table).
+   - **Commit:** `feat(web): implement tasks list with filters and pagination`
 
-2. **Detalhes e comentários**
-   - [ ] Exibir detalhes completos.
-   - [ ] Criar e listar comentários.
-   - **Commit:**
-     ```bash
-     git commit -m "feat(web): implement task details and comments section"
-     ```
+   _Checkpoint:_ Lista de tarefas carrega com paginação/filters e estados de loading/empty.
 
-3. **Feedbacks de UI**
-   - [ ] Skeletons, toasts, e validações.
-   - **Commit:**
-     ```bash
-     git commit -m "style(web): improve UI feedback and loading states"
-     ```
+2. **Fase 2 — Detalhes da tarefa**
+   - [ ] Criar rota `/tasks/:id`.
+   - [ ] Exibir título, descrição, status e assignees.
+   - [ ] Implementar editar/excluir (PUT/DELETE).
+   - **Commit:** `feat(web): add task details and edit/delete functionality`
 
----
+   _Checkpoint:_ Detalhe permite editar/excluir com feedback de sucesso/erro.
 
-**Checkpoint:** CRUD visual funcional (sem recarregar a página).
+3. **Fase 3 — Comentários**
+   - [ ] Componente `CommentsSection`.
+   - [ ] Integrar `GET /tasks/:id/comments` (paginado) e `POST /tasks/:id/comments`.
+   - [ ] Revalidação automática (invalidate TanStack Query).
+   - **Commit:** `feat(web): implement comments section with API integration`
+
+   _Checkpoint:_ Comentários são listados e criados com atualização imediata.
+
+4. **Fase 4 — UI feedbacks**
+   - [ ] Loaders, skeletons e estados vazios.
+   - [ ] Toasts (shadcn) e validações (zod + react-hook-form).
+   - **Commit:** `style(web): enhance UX with skeletons, toasts, and form validation`
+
+5. **Fase 5 — QA**
+   - [ ] Testar CRUD e comentários fim a fim.
+   - [ ] Ajustar responsividade (mobile/desktop).
+   - **Commit:** `chore(web): validate tasks and comments ui flows`
+
+**Checkpoint (do dia):** CRUD visual completo de tarefas e comentários sem recarregar a página.
 
 ---
 
 ## 🗓️ Dia 9 — Frontend (WebSocket + UX)
 
-**Meta:** Integrar WebSocket para notificações em tempo real.
+**Meta:** Receber notificações em tempo real e melhorar experiência geral.
 
 ---
 
-### 🔹 Subtasks
+### 🔹 Fases & Subtasks
 
-1. **Conexão WS**
-   - [ ] Criar cliente WebSocket conectado ao `notifications-service`.
-   - [ ] Autenticar via accessToken.
-   - **Commit:**
-     ```bash
-     git commit -m "feat(web): setup WebSocket connection with JWT authentication"
-     ```
+1. **Fase 1 — Cliente WebSocket**
+   - [ ] Hook `useWebSocket` com URL (`wss://.../ws?token=`).
+   - [ ] Autenticar via `accessToken` do Zustand.
+   - [ ] Keep-alive com `heartbeat`.
+   - **Commit:** `feat(web): setup WebSocket client with JWT authentication`
 
-2. **Notificações**
-   - [ ] Receber e exibir `task:created`, `task:updated`, `comment:new`.
-   - [ ] Mostrar toast/badge ao receber.
-   - **Commit:**
-     ```bash
-     git commit -m "feat(web): display real-time notifications via WebSocket"
-     ```
+   _Checkpoint:_ Conexão WS autentica e permanece estável (reconnect/heartbeat).
 
-3. **UX**
-   - [ ] Polir UX geral, badges e empty states.
-   - **Commit:**
-     ```bash
-     git commit -m "style(web): refine UX and empty states"
-     ```
+2. **Fase 2 — Integração com notificações**
+   - [ ] Store `useNotificationsStore`.
+   - [ ] Tratar eventos `task:created`, `task:updated`, `comment:new`.
+   - [ ] Exibir toasts e badge contador; `GET /notifications` para bootstrap.
+   - **Commit:** `feat(web): integrate real-time notifications via WebSocket`
 
----
+   _Checkpoint:_ Ao criar/atualizar/comentar, o outro usuário recebe toast/badge em tempo real.
 
-**Checkpoint:** Toasts aparecem em tempo real entre abas.
+3. **Fase 3 — UI e UX refinados**
+   - [ ] Dropdown de notificações no header.
+   - [ ] Mostrar data/resumo/link; marcar como lida ao clicar.
+   - [ ] Ajustes de UX (empty states/animações leves).
+   - **Commit:** `style(web): refine notification center and UX polish`
+
+4. **Fase 4 — QA e testes**
+   - [ ] E2E com 2 usuários e 2 abas.
+   - [ ] Recuperação de notificações antigas ao reconectar.
+   - **Commit:** `chore(web): validate real-time flows and fix edge cases`
+
+**Checkpoint (do dia):** Toasts e badges em tempo real entre usuários/abas; centro de notificações funcional.
 
 ---
 
 ## 🗓️ Dia 10 — Documentação e Entrega
 
-**Meta:** Entregar projeto completo rodando com um comando.
+**Meta:** Garantir que todo o sistema rode de ponta a ponta com Docker Compose.
 
 ---
 
-### 🔹 Subtasks
+### 🔹 Fases & Subtasks
 
-1. **README final**
-   - [ ] Adicionar diagrama ASCII da arquitetura.
-   - [ ] Explicar decisões técnicas (JWT, Query, WS).
-   - [ ] Adicionar instruções de execução e URLs.
-   - **Commit:**
-     ```bash
-     git commit -m "docs: finalize README with architecture and instructions"
+1. **Fase 1 — Revisão final do monorepo**
+   - [ ] Validar `.env.example` de todos os apps.
+   - [ ] `turbo run build` por app (ou filtro).
+   - [ ] Atualizar dependências críticas se necessário.
+   - **Commit:** `chore: review envs and validate monorepo builds`
+
+   _Checkpoint:_ Todos os pacotes buildam sem erros; envs de exemplo conferidos.
+
+2. **Fase 2 — README final**
+   - [ ] Diagrama ASCII da arquitetura:
      ```
-
-2. **Validação final**
-   - [ ] Rodar `docker compose up --build`.
-   - [ ] Testar fluxo completo: Login → Criar Tarefa → Comentar → Notificação.
-   - [ ] Validar rate-limit, CORS e migrations.
-   - **Commit:**
-     ```bash
-     git commit -m "chore: final validation and cleanup before delivery"
+     [web] → [api-gateway] → [auth | tasks | notifications] → RabbitMQ → Postgres
      ```
+   - [ ] Decisões técnicas (JWT, WS, Query, rate-limit, CORS).
+   - [ ] Instruções de execução, endpoints e URLs.
+   - **Commit:** `docs: finalize README with architecture and instructions`
 
----
+   _Checkpoint:_ README completo, claro e suficiente para rodar o projeto do zero.
 
-**Checkpoint:** Projeto completo e rodando em Docker.
+3. **Fase 3 — Teste de entrega**
+   - [ ] `docker compose up --build`.
+   - [ ] Fluxo completo: Login → Criar Tarefa → Comentar → Notificação (front recebe toast).
+   - [ ] Validar rate-limit, CORS e migrations automáticas.
+   - **Commit:** `chore: final e2e validation and delivery`
 
----
+   _Checkpoint:_ Ambiente sobe limpo via Docker; fluxo E2E passa sem ajustes manuais.
 
-## 🧭 Dicas Finais
+4. **Fase 4 — Apresentação e limpeza**
+   - [ ] Remover logs/comentários temporários.
+   - [ ] (Opcional) Vídeo curto de demo.
+   - [ ] Tag final:
+     ```bash
+     git tag -a v1.0.0 -m "Full-stack challenge completed"
+     git push origin v1.0.0
+     ```
+   - **Commit:** `chore: cleanup and tag final version`
 
-- ✅ Entregar algo **completo e funcional**, não “perfeito”.
-- 🧩 Sempre fechar o dia com **algo rodando** (mesmo parcial).
-- 🧱 Documentar trade-offs simples: “usei segredo simétrico”, “mantive tokens em localStorage”.
-- 🕹️ Teste o real-time: 2 abas → criar tarefa → notificação imediata.
-- 🧾 Commitar com mensagens no padrão **Conventional Commits**.
-
----
-
-# 🎯 Resultado Esperado
-
-Um monorepo funcional com:
-
-- Auth + Gateway + Tasks + Notifications + Web app
-- Fluxo completo “login → CRUD → comentário → notificação real-time”
-- Executável com `docker compose up --build`
-- README profissional e direto.
+**Checkpoint (do dia):** Projeto executável com `docker compose up --build`, README final e tag publicada.

@@ -24,6 +24,10 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
   private readonly routingPattern: string;
   private readonly deadLetterExchange?: string;
   private readonly handlers: Record<TaskEvent['type'], (event: TaskEvent) => Promise<void>>;
+  private isShuttingDown = false;
+  private retryBaseMs: number;
+  private retryMaxMs: number;
+  private connecting?: Promise<void>;
 
   constructor(
     @Inject(ConfigService) private readonly configService: ConfigService,
@@ -35,6 +39,8 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
     this.queue = this.configService.get<string>('NOTIFICATIONS_QUEUE', 'notifications.q');
     this.routingPattern = this.configService.get<string>('TASKS_EVENTS_ROUTING', 'task.#');
     this.deadLetterExchange = this.configService.get<string>('NOTIFICATIONS_DLX');
+    this.retryBaseMs = Number(this.configService.get<string>('RABBITMQ_RETRY_BASE_MS', '500'));
+    this.retryMaxMs = Number(this.configService.get<string>('RABBITMQ_RETRY_MAX_MS', '10000'));
     this.handlers = {
       'task.created': async (event) => this.handleTaskCreated(event as TaskCreatedEvent),
       'task.updated': async (event) => this.handleTaskUpdated(event as TaskUpdatedEvent),
@@ -44,10 +50,11 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit(): Promise<void> {
-    await this.setupConsumer();
+    await this.ensureConnected();
   }
 
   async onModuleDestroy(): Promise<void> {
+    this.isShuttingDown = true;
     await this.channel
       ?.close()
       .catch((error: unknown) =>
@@ -67,7 +74,7 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
       );
   }
 
-  private async setupConsumer(): Promise<void> {
+  private async setupConsumerOnce(): Promise<void> {
     const url = this.configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672');
 
     this.connection = await connect(url);
@@ -107,9 +114,63 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
       },
     );
 
+    const safeOn = (emitter: any, event: string, handler: (...args: any[]) => void) => {
+      if (emitter && typeof emitter.on === 'function') {
+        try {
+          emitter.on(event, handler);
+        } catch {
+          /* noop */
+        }
+      }
+    };
+    safeOn(this.connection as any, 'close', () => this.scheduleReconnect('connection_close'));
+    safeOn(this.connection as any, 'error', () => this.scheduleReconnect('connection_error'));
+    safeOn(this.channel as any, 'close', () => this.scheduleReconnect('channel_close'));
+    safeOn(this.channel as any, 'error', () => this.scheduleReconnect('channel_error'));
+
     Logger.log(
       `RabbitMQ consumer ready (queue=${this.queue}, pattern=${this.routingPattern})`,
       LOGGER_CONTEXT,
+    );
+  }
+
+  private async ensureConnected(): Promise<void> {
+    if (this.channel && this.connection) return;
+    if (!this.connecting) {
+      this.connecting = this.connectWithRetry();
+    }
+    try {
+      await this.connecting;
+    } finally {
+      this.connecting = undefined;
+    }
+  }
+
+  private async connectWithRetry(): Promise<void> {
+    let delay = this.retryBaseMs;
+    while (!this.isShuttingDown) {
+      try {
+        await this.setupConsumerOnce();
+        return;
+      } catch (error) {
+        Logger.warn(
+          `RabbitMQ consumer connection failed: ${(error as Error).message}. Retrying in ${delay}ms`,
+          LOGGER_CONTEXT,
+        );
+        await this.sleep(delay);
+        delay = Math.min(this.retryMaxMs, Math.floor(delay * 1.5));
+      }
+    }
+  }
+
+  private scheduleReconnect(origin: string): void {
+    if (this.isShuttingDown) return;
+    this.channel = undefined;
+    this.connection = undefined;
+    Logger.warn(`Scheduling consumer reconnect (origin=${origin})`, LOGGER_CONTEXT);
+    // Fire and forget — ensureConnected handles the loop
+    this.ensureConnected().catch((err) =>
+      Logger.error(`Reconnect failed: ${(err as Error).message}`, LOGGER_CONTEXT),
     );
   }
 
@@ -138,7 +199,18 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
       const event = parseTaskEvent(routingKey, payload);
       await this.dispatchEvent(event);
       this.metrics.incrementProcessed(event.type);
-      channel.ack(message);
+      try {
+        channel.ack(message);
+      } catch (ackError) {
+        Logger.error(
+          `ACK failed for ${routingKey}: ${(ackError as Error).message}`,
+          undefined,
+          LOGGER_CONTEXT,
+        );
+        try {
+          channel.nack(message, false, false);
+        } catch {}
+      }
     } catch (error) {
       const reason =
         error instanceof InvalidTaskEventError || error instanceof Error
@@ -197,5 +269,9 @@ export class TasksEventsConsumer implements OnModuleInit, OnModuleDestroy {
     if (recipients.length > 0) {
       this.ws.emitToUsers('comment:new', event, recipients);
     }
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
