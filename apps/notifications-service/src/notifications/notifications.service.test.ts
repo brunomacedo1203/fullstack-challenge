@@ -1,12 +1,14 @@
 import { mock, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Repository } from 'typeorm';
+import { ObjectLiteral, Repository } from 'typeorm';
 import { NotificationsService } from './notifications.service';
 import { Notification } from './notification.entity';
 import { TaskParticipants } from './task-participants.entity';
 import { TaskCreatedEvent, TaskUpdatedEvent, TaskCommentCreatedEvent } from '@jungle/types';
 
-const repo = <T>(overrides: Partial<Record<keyof Repository<T>, unknown>> = {}): Repository<T> =>
+const repo = <T extends ObjectLiteral>(
+  overrides: Partial<Record<keyof Repository<T>, unknown>> = {},
+): Repository<T> =>
   ({
     create: (entity: T) => entity,
     save: async (entities: T | T[]) => entities,
