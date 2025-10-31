@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { Notification } from './notification.entity';
 import { TaskCommentCreatedEvent, TaskCreatedEvent, TaskUpdatedEvent } from '@jungle/types';
 import { TaskParticipants } from './task-participants.entity';
@@ -16,7 +16,7 @@ export class NotificationsService {
     private readonly participantsRepo: Repository<TaskParticipants>,
   ) {}
 
-  async handleTaskCreated(event: TaskCreatedEvent): Promise<void> {
+  async handleTaskCreated(event: TaskCreatedEvent): Promise<string[]> {
     const assignees = this.normalizeIds(event.payload.assigneeIds);
     const creatorId = event.actorId ?? null;
 
@@ -31,7 +31,7 @@ export class NotificationsService {
 
     const recipients = assignees.filter((id) => !creatorId || id !== creatorId);
     if (recipients.length === 0) {
-      return;
+      return [];
     }
 
     const notifications = recipients.map((recipientId) =>
@@ -45,9 +45,10 @@ export class NotificationsService {
     );
 
     await this.notificationsRepo.save(notifications);
+    return recipients;
   }
 
-  async handleTaskUpdated(event: TaskUpdatedEvent): Promise<void> {
+  async handleTaskUpdated(event: TaskUpdatedEvent): Promise<string[]> {
     const assignees = this.normalizeIds(event.payload.assigneeIds);
     const existing = await this.participantsRepo.findOne({ where: { taskId: event.taskId } });
     const creatorId = existing?.creatorId ?? null;
@@ -70,7 +71,7 @@ export class NotificationsService {
     }
 
     if (recipients.size === 0) {
-      return;
+      return [];
     }
 
     const changed = Object.keys(event.payload.changedFields).join(', ') || 'campos';
@@ -85,15 +86,16 @@ export class NotificationsService {
     );
 
     await this.notificationsRepo.save(notifications);
+    return Array.from(recipients);
   }
 
-  async handleTaskCommentCreated(event: TaskCommentCreatedEvent): Promise<void> {
+  async handleTaskCommentCreated(event: TaskCommentCreatedEvent): Promise<string[]> {
     const participants = await this.participantsRepo.findOne({ where: { taskId: event.taskId } });
     if (!participants) {
       this.logger.warn(
         `Nenhum participante conhecido para tarefa ${event.taskId}; ignorando comentário`,
       );
-      return;
+      return [];
     }
 
     const recipients = new Set(participants.assigneeIds ?? []);
@@ -108,7 +110,7 @@ export class NotificationsService {
     }
 
     if (recipients.size === 0) {
-      return;
+      return [];
     }
 
     const preview = event.payload.content.slice(0, 100);
@@ -124,6 +126,15 @@ export class NotificationsService {
     );
 
     await this.notificationsRepo.save(notifications);
+    return Array.from(recipients);
+  }
+
+  async listUnread(recipientId: string, limit = 10): Promise<Notification[]> {
+    return this.notificationsRepo.find({
+      where: { recipientId, readAt: IsNull() },
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
   }
 
   private normalizeIds(ids: readonly string[] | undefined): string[] {
