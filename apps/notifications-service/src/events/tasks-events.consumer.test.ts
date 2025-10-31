@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { TasksEventsConsumer } from './tasks-events.consumer';
 import { TaskCreatedEvent } from '@jungle/types';
 
 type AckFn = ReturnType<typeof mock.fn>;
@@ -10,6 +11,12 @@ const createConfigService = (): ConfigService =>
   ({
     get: (_key: string, defaultValue?: unknown) => defaultValue,
   }) as ConfigService;
+
+const createMetrics = () => ({
+  incrementReceived: () => undefined,
+  incrementProcessed: () => undefined,
+  incrementFailed: () => undefined,
+});
 
 const BASE_EVENT: TaskCreatedEvent = {
   type: 'task.created',
@@ -63,23 +70,18 @@ test('handleMessage ACKs the message when processing succeeds', async (t) => {
     mock.reset();
   });
 
-  t.mock.module('amqplib', {
-    namedExports: {
-      connect: async () => ({
-        createChannel: async () => ({}),
-        close: async () => undefined,
-      }),
-    },
-  });
-
-  const { TasksEventsConsumer } = await import('./tasks-events.consumer');
   const notifications = {
     handleTaskCreated: mock.fn(async () => []),
     handleTaskUpdated: mock.fn(async () => []),
     handleTaskCommentCreated: mock.fn(async () => []),
   } as Record<string, unknown>;
   const ws = { emitToUsers: mock.fn(() => undefined) } as Record<string, unknown>;
-  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any, ws as any);
+  const consumer = new TasksEventsConsumer(
+    createConfigService(),
+    notifications as any,
+    ws as any,
+    createMetrics() as any,
+  );
 
   const ack = mock.fn(() => undefined) as AckFn;
   const nack = mock.fn(() => undefined) as AckFn;
@@ -99,23 +101,18 @@ test('handleMessage NACKs the message when ACK throws', async (t) => {
     mock.reset();
   });
 
-  t.mock.module('amqplib', {
-    namedExports: {
-      connect: async () => ({
-        createChannel: async () => ({}),
-        close: async () => undefined,
-      }),
-    },
-  });
-
-  const { TasksEventsConsumer } = await import('./tasks-events.consumer');
   const notifications = {
     handleTaskCreated: mock.fn(async () => []),
     handleTaskUpdated: mock.fn(async () => []),
     handleTaskCommentCreated: mock.fn(async () => []),
   } as Record<string, unknown>;
   const ws = { emitToUsers: mock.fn(() => undefined) } as Record<string, unknown>;
-  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any, ws as any);
+  const consumer = new TasksEventsConsumer(
+    createConfigService(),
+    notifications as any,
+    ws as any,
+    createMetrics() as any,
+  );
 
   const ackError = new Error('ack failure');
   const ack = mock.fn(() => {
@@ -140,26 +137,18 @@ test('handleMessage NACKs invalid payloads without calling dispatch', async (t) 
     mock.reset();
   });
 
-  t.mock.module('amqplib', {
-    namedExports: {
-      connect: async () => ({
-        createChannel: async () => ({
-          ack: mock.fn(() => undefined),
-          nack: mock.fn(() => undefined),
-        }),
-        close: async () => undefined,
-      }),
-    },
-  });
-
-  const { TasksEventsConsumer } = await import('./tasks-events.consumer');
   const notifications = {
     handleTaskCreated: mock.fn(async () => []),
     handleTaskUpdated: mock.fn(async () => []),
     handleTaskCommentCreated: mock.fn(async () => []),
   } as Record<string, unknown>;
   const ws = { emitToUsers: mock.fn(() => undefined) } as Record<string, unknown>;
-  const consumer = new TasksEventsConsumer(createConfigService(), notifications as any, ws as any);
+  const consumer = new TasksEventsConsumer(
+    createConfigService(),
+    notifications as any,
+    ws as any,
+    createMetrics() as any,
+  );
 
   const ack = mock.fn(() => undefined) as AckFn;
   const nack = mock.fn(() => undefined) as AckFn;

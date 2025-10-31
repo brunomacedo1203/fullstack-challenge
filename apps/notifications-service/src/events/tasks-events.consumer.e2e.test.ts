@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TaskCreatedEvent, TaskUpdatedEvent, TaskCommentCreatedEvent } from '@jungle/types';
+import { TasksEventsConsumer } from './tasks-events.consumer';
 
 const createConfigService = (): ConfigService =>
   ({ get: (_k: string, def?: unknown) => def }) as ConfigService;
@@ -30,17 +31,6 @@ test('E2E path: A creates/updates/comments; B receives only his own', async (t) 
     restoreLogs();
     mock.reset();
   });
-
-  t.mock.module('amqplib', {
-    namedExports: {
-      connect: async () => ({
-        createChannel: async () => ({}),
-        close: async () => undefined,
-      }),
-    },
-  });
-
-  const { TasksEventsConsumer } = await import('./tasks-events.consumer');
 
   const notifications = {
     handleTaskCreated: mock.fn(async () => ['user-B']),
