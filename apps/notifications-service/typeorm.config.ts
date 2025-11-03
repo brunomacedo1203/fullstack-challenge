@@ -7,7 +7,16 @@ import { TaskParticipants } from './src/notifications/task-participants.entity';
 
 ConfigModule.forRoot({
   isGlobal: true,
-  envFilePath: [`.env.${process.env.NODE_ENV ?? 'development'}`, '.env.local', '.env'],
+  envFilePath: [
+    // app-local first
+    join(__dirname, `.env.${process.env.NODE_ENV ?? 'development'}`),
+    join(__dirname, '.env.local'),
+    join(__dirname, '.env'),
+    // repo root fallback
+    `.env.${process.env.NODE_ENV ?? 'development'}`,
+    '.env.local',
+    '.env',
+  ],
   expandVariables: true,
 });
 

@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { TasksModule } from './tasks/tasks.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -12,14 +13,19 @@ import { TasksModule } from './tasks/tasks.module';
       envFilePath: [`.env.${process.env.NODE_ENV ?? 'development'}`, '.env.local', '.env'],
       expandVariables: true,
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 1,
-        limit: 10,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [
+        {
+          ttl: Number(config.get('THROTTLE_TTL') ?? 1),
+          limit: Number(config.get('THROTTLE_LIMIT') ?? 10),
+        },
+      ],
+    }),
     AuthModule,
     TasksModule,
+    HealthModule,
   ],
   providers: [
     {

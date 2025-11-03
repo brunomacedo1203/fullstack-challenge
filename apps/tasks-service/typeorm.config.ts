@@ -8,9 +8,19 @@ import { Comment } from './src/tasks/entities/comment.entity';
 import { TaskHistory } from './src/tasks/entities/task-history.entity';
 
 // Initialize ConfigModule to read env for CLI usage
+// Prefer app-scoped env files when running via CLI, then fall back to repo root
 ConfigModule.forRoot({
   isGlobal: true,
-  envFilePath: [`.env.${process.env.NODE_ENV ?? 'development'}`, '.env.local', '.env'],
+  envFilePath: [
+    // app-local
+    join(__dirname, `.env.${process.env.NODE_ENV ?? 'development'}`),
+    join(__dirname, '.env.local'),
+    join(__dirname, '.env'),
+    // repo root
+    `.env.${process.env.NODE_ENV ?? 'development'}`,
+    '.env.local',
+    '.env',
+  ],
   expandVariables: true,
 });
 

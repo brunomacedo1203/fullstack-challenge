@@ -1,11 +1,12 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class ListNotificationsQueryDto {
-  @ApiProperty({ description: 'Recipient user ID (UUID v4)' })
-  @IsUUID('4')
-  recipientId!: string;
+  // recipientId now derived from JWT; query param kept optional for backward-compatibility but ignored
+  @ApiPropertyOptional({ description: 'Deprecated: ignored. Recipient is derived from JWT.' })
+  @IsOptional()
+  recipientId?: string;
 
   @ApiPropertyOptional({
     description: 'Items to return (1-100). Default 10',

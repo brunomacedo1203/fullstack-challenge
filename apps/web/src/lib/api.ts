@@ -36,4 +36,44 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-refresh access token on 401 responses
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const { response, config } = error ?? {};
+    if (!response || response.status !== 401 || !config) {
+      throw error;
+    }
+
+    const originalRequest = config as any;
+    if (originalRequest.__isRetry) {
+      // Prevent infinite loops
+      useAuthStore.getState().logout();
+      throw error;
+    }
+
+    const { refreshToken } = useAuthStore.getState();
+    if (!refreshToken) {
+      useAuthStore.getState().logout();
+      throw error;
+    }
+
+    try {
+      originalRequest.__isRetry = true;
+      // Use a plain axios call to avoid interceptor recursion
+      const { data } = await axios.post(`${baseURL}/auth/refresh`, { refreshToken });
+      useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
+
+      // Retry original request with new token
+      const newToken = useAuthStore.getState().accessToken;
+      originalRequest.headers = originalRequest.headers ?? {};
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      return api.request(originalRequest);
+    } catch (e) {
+      useAuthStore.getState().logout();
+      throw error;
+    }
+  },
+);
+
 export default api;

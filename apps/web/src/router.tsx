@@ -11,6 +11,8 @@ import { useAuthStore } from './features/auth/store';
 import { LoginPage } from './routes/Login';
 import { RegisterPage } from './routes/Register';
 import { HomePage } from './routes/Home';
+import { TasksListPage } from './routes/TasksList';
+import { TaskDetailsPage } from './routes/TaskDetails';
 
 export type AuthContext = {
   isAuthenticated: boolean;
@@ -68,7 +70,36 @@ const homeRoute = createRoute({
   component: HomePage,
 });
 
-const routeTree = rootRoute.addChildren([loginRoute, registerRoute, homeRoute]);
+// Tasks routes (protected)
+const tasksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks',
+  beforeLoad: ({ context }) => {
+    if (!context.isAuthenticated) {
+      throw redirect({ to: '/login' });
+    }
+  },
+  component: TasksListPage,
+});
+
+const taskDetailsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks/$id',
+  beforeLoad: ({ context }) => {
+    if (!context.isAuthenticated) {
+      throw redirect({ to: '/login' });
+    }
+  },
+  component: TaskDetailsPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  loginRoute,
+  registerRoute,
+  homeRoute,
+  tasksRoute,
+  taskDetailsRoute,
+]);
 
 export const router = createRouter({
   routeTree,

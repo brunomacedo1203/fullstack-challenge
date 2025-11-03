@@ -328,38 +328,38 @@ _Checkpoint:_ Backend emite notificações em tempo real e sincroniza pendentes 
 ### 🔹 Fases & Subtasks
 
 1. **Fase 1 — Lista de tarefas**
-   - [ ] Criar rota `/tasks`.
-   - [ ] Integrar TanStack Query com `/api/tasks`.
-   - [ ] Adicionar paginação, filtros e busca.
-   - [ ] Implementar tabela responsiva (shadcn/ui Table).
+   - [x] Criar rota `/tasks`.
+   - [x] Integrar TanStack Query com `/api/tasks`.
+   - [x] Adicionar paginação, filtros e busca.
+   - [x] Implementar tabela responsiva (shadcn/ui Table).
    - **Commit:** `feat(web): implement tasks list with filters and pagination`
 
    _Checkpoint:_ Lista de tarefas carrega com paginação/filters e estados de loading/empty.
 
 2. **Fase 2 — Detalhes da tarefa**
-   - [ ] Criar rota `/tasks/:id`.
-   - [ ] Exibir título, descrição, status e assignees.
-   - [ ] Implementar editar/excluir (PUT/DELETE).
+   - [x] Criar rota `/tasks/:id`.
+   - [x] Exibir título, descrição, status e assignees.
+   - [x] Implementar editar/excluir (PUT/DELETE).
    - **Commit:** `feat(web): add task details and edit/delete functionality`
 
    _Checkpoint:_ Detalhe permite editar/excluir com feedback de sucesso/erro.
 
 3. **Fase 3 — Comentários**
-   - [ ] Componente `CommentsSection`.
-   - [ ] Integrar `GET /tasks/:id/comments` (paginado) e `POST /tasks/:id/comments`.
-   - [ ] Revalidação automática (invalidate TanStack Query).
+   - [x] Componente `CommentsSection`.
+   - [x] Integrar `GET /tasks/:id/comments` (paginado) e `POST /tasks/:id/comments`.
+   - [x] Revalidação automática (invalidate TanStack Query).
    - **Commit:** `feat(web): implement comments section with API integration`
 
    _Checkpoint:_ Comentários são listados e criados com atualização imediata.
 
 4. **Fase 4 — UI feedbacks**
-   - [ ] Loaders, skeletons e estados vazios.
-   - [ ] Toasts (shadcn) e validações (zod + react-hook-form).
+   - [x] Loaders, skeletons e estados vazios.
+   - [x] Toasts (shadcn) e validações (zod + react-hook-form).
    - **Commit:** `style(web): enhance UX with skeletons, toasts, and form validation`
 
 5. **Fase 5 — QA**
-   - [ ] Testar CRUD e comentários fim a fim.
-   - [ ] Ajustar responsividade (mobile/desktop).
+   - [x] Testar CRUD e comentários fim a fim.
+   - [x] Ajustar responsividade (mobile/desktop).
    - **Commit:** `chore(web): validate tasks and comments ui flows`
 
 **Checkpoint (do dia):** CRUD visual completo de tarefas e comentários sem recarregar a página.
