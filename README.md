@@ -329,3 +329,13 @@ Evidencia a evolução do schema após o Dia 5, com as novas entidades conectada
 📌 **Autor:** [Bruno Macedo](https://github.com/brunomacedo1203)  
 📆 **Progresso:** Implementação incremental (Dias 1–10)  
 🧠 **Propósito:** Reproduzir um ambiente profissional de desenvolvimento full-stack com foco em arquitetura limpa, versionamento e documentação técnica.
+
+---
+
+## 🧩 MCP Servers (Context7)
+
+Este projeto utiliza MCP (Model Context Protocol) na configuração do IDE/agent para melhorar a produtividade durante o desenvolvimento.
+
+- Servidores habilitados: `filesystem` e `context7`.
+- O `context7` permite consultar documentação de bibliotecas (por nome/versão e tópico) diretamente no editor/agent, sem sair do fluxo de trabalho.
+- Configuração: veja `.codex/config.toml`

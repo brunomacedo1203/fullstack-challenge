@@ -28,3 +28,7 @@ coverage/
 # Docker
 *.pid
 *.pid.lock
+
+# Codex MCP local config
+.codex/
+.env
