@@ -1,11 +1,9 @@
-import { randomUUID } from 'crypto';
 import {
-  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   OneToMany,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Comment } from './comment.entity';
@@ -28,7 +26,7 @@ export enum TaskStatus {
 
 @Entity({ name: 'tasks' })
 export class Task {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ length: 255 })
@@ -70,9 +68,4 @@ export class Task {
 
   @OneToMany(() => TaskHistory, (history) => history.task)
   history?: TaskHistory[];
-
-  @BeforeInsert()
-  assignId(): void {
-    if (!this.id) this.id = randomUUID();
-  }
 }
