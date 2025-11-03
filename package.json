@@ -26,9 +26,11 @@
   },
   "packageManager": "npm@10.8.2",
   "devDependencies": {
+    "@modelcontextprotocol/server-filesystem": "^2025.8.21",
     "@types/node": "^24.9.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
+    "@upstash/context7-mcp": "^1.0.26",
     "cross-env": "^10.1.0",
     "eslint": "^9.38.0",
     "husky": "^9.1.7",

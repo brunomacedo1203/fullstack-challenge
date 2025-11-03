@@ -8,6 +8,32 @@
     "start": "node dist/main.js",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "test": "tsx --test src/**/*.test.ts",
+    "typeorm": "cross-env NODE_ENV=development TS_NODE_PROJECT=tsconfig.cli.json typeorm-ts-node-commonjs -d typeorm.config.ts",
+    "typeorm:prod": "node ../../node_modules/typeorm/cli.js -d dist/typeorm.config.js",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:run:prod": "npm run typeorm:prod -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "migration:generate": "npm run typeorm -- migration:generate"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.8",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.8",
+    "@nestjs/platform-express": "^11.1.8",
+    "@nestjs/platform-ws": "^11.1.8",
+    "@nestjs/websockets": "^11.1.8",
+    "@nestjs/typeorm": "^11.0.0",
+    "typeorm": "^0.3.27",
+    "pg": "^8.16.3",
+    "@types/amqplib": "^0.10.8",
+    "amqplib": "^0.10.9",
+    "jsonwebtoken": "^9.0.2",
+    "ws": "^8.18.0",
+    "@types/ws": "^8.5.12",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "reflect-metadata": "^0.2.2"
   }
 }
