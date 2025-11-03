@@ -48,6 +48,13 @@ O objetivo é entregar um **sistema colaborativo de gestão de tarefas** compost
 - **Infra complementar:** RabbitMQ 3 (management UI), Swagger/OpenAPI via Nest
 - **Frontend:** React + TanStack Router + Tailwind + shadcn/ui (a partir do Dia 7)
 
+### IDs e Migrations (Convenção)
+
+- IDs primários agora são gerados pelo banco via `@PrimaryGeneratedColumn('uuid')`.
+- As migrations habilitam `uuid-ossp` e definem `DEFAULT uuid_generate_v4()` para as colunas `id`.
+- Com isso, é seguro usar tanto `save()` quanto `insert()` nas operações do TypeORM.
+- Ver diretrizes em `CONTRIBUTING.md`.
+
 ---
 
 ## 🚀 Como Rodar o Projeto
@@ -78,7 +85,9 @@ cp apps/<app>/.env.example apps/<app>/.env
 
 Valores padrão (local/dev) já funcionam com o `docker-compose.yml` presente na raiz.
 
-- `apps/tasks-service/.env` agora traz `TASKS_EVENTS_EXCHANGE` (default `tasks.events`) apontando para o exchange usado nos eventos de tarefas.
+- `apps/tasks-service/.env` expos `TASKS_EVENTS_EXCHANGE` (default `tasks.events`).
+- `apps/notifications-service/.env` define `RABBITMQ_URL`, `TASKS_EVENTS_EXCHANGE`, `NOTIFS_QUEUE`, `PORT`, `JWT_ACCESS_SECRET` e `MIGRATIONS_RUN=true` (para aplicar migrations automaticamente no boot).
+- `apps/auth-service/.env` também traz `MIGRATIONS_RUN=true`, garantindo que as migrations de UUID sejam aplicadas ao subir via Docker.
 
 ---
 
@@ -115,6 +124,9 @@ docker compose exec tasks-service npm run migration:run --workspace=@jungle/task
 
 # Notifications
 docker compose exec notifications-service npm run migration:run --workspace=@jungle/notifications-service
+
+Observação: novas migrations foram adicionadas para padronizar IDs em UUID gerados pelo banco (Auth e Tasks).
+Se estiver usando o `docker compose up`, os serviços de Auth e Notifications já estão configurados com `MIGRATIONS_RUN=true` e executam as migrations automaticamente no boot — rode manualmente apenas se estiver trabalhando fora dos containers.
 ```
 
 ---
@@ -196,14 +208,26 @@ Regras principais e integrações:
 
 - Notifications/WebSocket implementados no Dia 6 (ver seção abaixo para detalhes do WS e testes com wscat).
 
-### Notifications WebSocket (Dia 6)
+### Notifications Service & WebSocket (Dia 6)
 
-- Gateway WS: `ws://localhost:3004/ws?token=<JWT>` (usa o mesmo segredo do access token do Gateway via `JWT_ACCESS_SECRET` — mantém fallback para `JWT_SECRET`)
-- Eventos emitidos para usuários destinatários:
+- Health-check: `GET http://localhost:3004/health`
+- Consumer RabbitMQ:
+  - Fila padrão `NOTIFS_QUEUE=notifications.q` (durável) com `prefetch(10)` e ACK manual
+  - Bind no exchange `tasks.events` usando padrão `task.#` (suporta múltiplos padrões via `,`)
+  - Payloads validados com tipos de `packages/types`; mensagens inválidas recebem NACK para a DLQ (opcional)
+- Persistência:
+  - Upsert de participantes por tarefa (`task_participants`), evitando notificar o próprio autor
+  - Tabela `notifications` (`id`, `recipient_id`, `type`, `task_id`, `comment_id`, `title`, `body`, `read_at`, `created_at`)
+  - Índices em `(recipient_id, read_at)` e `(recipient_id, created_at DESC)` para listagem rápida
+- WebSocket gateway em `ws://localhost:3004/ws?token=<JWT>` (usa `JWT_ACCESS_SECRET`) com limpeza de sockets por usuário em `disconnect`
+- Eventos emitidos aos destinatários conectados:
   - `task:created`
   - `task:updated`
   - `comment:new`
-- Ao conectar, o servidor envia as últimas não lidas como `notification:unread` (até 10).
+- Sincronização inicial: ao conectar, o serviço envia as últimas notificações não lidas (`notification:unread`, limite padrão 10)
+- API auxiliar `GET /notifications?page=&size=` (JWT requerido) para teste/local; `size` é opcional graças ao `ParseIntPipe({ optional: true })`
+- Observabilidade: logs estruturados por `routingKey` e métricas básicas para QA; script wscat documentado para debug
+- QA: cenário validado com 2 usuários simultâneos — usuário A cria/atualiza/comenta e usuário B recebe apenas notificações pertinentes (via WS + `GET /notifications`)
 
 Exemplo rápido com wscat:
 
@@ -323,6 +347,61 @@ Diagrama Entidade-Relacionamento atualizado, mostrando as conexões entre todas 
 Evidencia a evolução do schema após o Dia 5, com as novas entidades conectadas ao modelo existente.
 
 ![Figura 10 – ER Diagram – Dia 5](./docs/images/db-figure-8-er-dia5.png)
+
+---
+
+## 🗓️ DIA 7 – Frontend (Setup + Auth)
+
+Nesta etapa foi criada a aplicação React em `apps/web` com autenticação integrada ao API Gateway. O front-end foi configurado com **Vite + React + TypeScript**, **Tailwind CSS**, **shadcn/ui**, **TanStack Router** e **Zustand** para gerenciamento de estado global e persistência de sessão.
+
+### 🧩 Fluxo Validado
+
+1. Usuário acessa `/register` e preenche o formulário.
+2. O front envia `POST /api/auth/register` via Gateway.
+3. O Auth Service responde com tokens JWT (`accessToken` e `refreshToken`).
+4. O Zustand salva o estado em `localStorage` e o usuário é redirecionado para a área autenticada.
+
+---
+
+### 🖼️ **Figura 11 – Tela de Registro**
+
+Interface `/register` com o formulário preenchido antes do envio.  
+_Mostra o app React rodando localmente e o layout base configurado._
+
+![Figura 11 – Tela de Registro](./docs/images/register-form.png)
+
+---
+
+### 🖼️ **Figura 12 – Registro via Gateway (Headers)**
+
+Requisição `POST /api/auth/register` retornando **201 Created** através do API Gateway.  
+_Comprova a comunicação completa entre Frontend → Gateway → Auth Service._
+
+![Figura 12 – Registro via Gateway (Headers)](./docs/images/register-headers.png)
+
+---
+
+### 🖼️ **Figura 13 – Resposta da API (Body JWT)**
+
+Visualização da aba **Response** contendo `accessToken` e `refreshToken`.  
+_Confirma o retorno de tokens válidos e autenticação bem-sucedida._
+
+![Figura 13 – Resposta da API (Body JWT)](./docs/images/register-response.png)
+
+---
+
+### 🖼️ **Figura 14 – Persistência Zustand**
+
+Estado persistido no `localStorage` com a chave `auth-store`, contendo tokens e dados do usuário.  
+_Evidência de que o login permanece ativo após recarregar a página._
+
+![Figura 14 – Persistência Zustand](./docs/images/auth-store.png)
+
+---
+
+✅ **Resultado:**  
+Login e registro funcionando via API Gateway, tokens persistindo localmente e rotas privadas protegidas.  
+O frontend está pronto para iniciar o **Dia 8 – Tasks List + Comments**.
 
 ---
 

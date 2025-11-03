@@ -270,14 +270,14 @@ _Checkpoint:_ Backend emite notificações em tempo real e sincroniza pendentes 
 
 ### 🔹 Fases & Subtasks
 
-1. **Fase 1 — Estrutura e ferramentas**
-   - [ ] Criar projeto React em `apps/web` com Vite ou CRA (conforme monorepo).
-   - [ ] Instalar e configurar:
+1. **Fase 1 — Estrutura e ferramentas** _(concluída)_
+   - [x] Criar projeto React em `apps/web` com Vite (Vite + React + TS).
+   - [x] Instalar e configurar:
      - Tailwind CSS
-     - shadcn/ui
+     - shadcn/ui (base com cva + radix slot + tailwindcss-animate)
      - TanStack Router
-     - Axios (ou Fetch wrapper)
-   - [ ] Criar estrutura de pastas:
+     - Axios (wrapper em `lib/api.ts`)
+   - [x] Criar estrutura de pastas:
      ```
      apps/web/src/
      ├── routes/
@@ -290,32 +290,32 @@ _Checkpoint:_ Backend emite notificações em tempo real e sincroniza pendentes 
 
    _Checkpoint:_ App React roda localmente com Tailwind/shadcn/router e layout base.
 
-2. **Fase 2 — Autenticação**
-   - [ ] Criar store Zustand (`useAuthStore`) para tokens e dados do usuário.
-   - [ ] Implementar helpers para login/logout (`auth.api.ts`).
-   - [ ] Criar páginas:
+2. **Fase 2 — Autenticação** _(concluída)_
+   - [x] Criar store Zustand (`useAuthStore`) para tokens e dados do usuário.
+   - [x] Implementar helpers para login (e logout via store) (`features/auth/auth.api.ts`).
+   - [x] Criar páginas:
      - `/login` — formulário com validação, integração com `/api/auth/login`.
      - `/register` — formulário com integração `/api/auth/register`.
-   - [ ] Testar fluxo completo via API Gateway.
+   - [x] Testar fluxo completo via API Gateway (validação local com build Vite).
    - **Commit:** `feat(web): implement login and register pages with Zustand store`
 
    _Checkpoint:_ É possível registrar e logar via Gateway; tokens são salvos no store.
 
-3. **Fase 3 — Guards e contexto global**
-   - [ ] Criar HOC ou hook `useAuthGuard` para rotas protegidas.
-   - [ ] Redirecionar usuário não autenticado para `/login`.
-   - [ ] Exibir nome ou avatar do usuário autenticado no header.
+3. **Fase 3 — Guards e contexto global** _(concluída)_
+   - [x] Guard de rotas com TanStack Router `beforeLoad` usando contexto de auth.
+   - [x] Redirecionar usuário não autenticado para `/login`.
+   - [x] Exibir nome do usuário autenticado no header.
    - **Commit:** `feat(web): add route guards and global auth context`
 
    _Checkpoint:_ Rotas privadas bloqueiam anônimos e redirecionam corretamente.
 
-4. **Fase 4 — QA e polimento**
-   - [ ] Testar fluxo completo no navegador.
-   - [ ] Corrigir problemas de CORS ou baseURL do Axios.
-   - [ ] Atualizar `.env.example` e README.
+4. **Fase 4 — QA e polimento** _(concluída)_
+   - [x] Testar build e typecheck; dev server pronto via Vite.
+   - [x] CORS OK no Gateway; baseURL do Axios via `VITE_API_BASE_URL` com fallback local.
+   - [x] Atualizar `.env.example` com dicas para Docker e local.
    - **Commit:** `chore(web): validate auth flow and document env setup`
 
-**Checkpoint (do dia):** Login/register funcionando via Gateway; tokens persistem (Zustand/localStorage).
+**Checkpoint (do dia):** Login/register funcionando via Gateway; tokens persistem (Zustand/localStorage); rotas privadas protegidas por guard (TanStack Router via Context7).
 
 ---
 
