@@ -1,20 +1,18 @@
-import { randomUUID } from 'crypto';
 import {
-  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Task } from './task.entity';
 
 @Entity({ name: 'comments' })
 @Index(['taskId', 'createdAt'])
 export class Comment {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column('uuid', { name: 'task_id' })
@@ -32,11 +30,4 @@ export class Comment {
   @ManyToOne(() => Task, (task) => task.comments, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'task_id' })
   task!: Task;
-
-  @BeforeInsert()
-  assignId(): void {
-    if (!this.id) {
-      this.id = randomUUID();
-    }
-  }
 }

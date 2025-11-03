@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
@@ -30,7 +29,8 @@ export class UsersService {
   }
 
   async create(input: CreateUserInput): Promise<User> {
-    const entity = this.usersRepository.create({ id: randomUUID(), ...input });
+    // Rely on entity-level @BeforeInsert hook to assign UUID
+    const entity = this.usersRepository.create({ ...input });
     return this.usersRepository.save(entity);
   }
 

@@ -32,3 +32,5 @@ coverage/
 # Codex MCP local config
 .codex/
 .env
+# Build outputs
+out/

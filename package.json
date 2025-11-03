@@ -10,6 +10,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build": "turbo run build",
+    "preview": "cd apps/web && npm run preview",
     "check-all": "npm run typecheck && npm run lint && npm run format:check && npm run build",
     "prepare": "husky install"
   },
