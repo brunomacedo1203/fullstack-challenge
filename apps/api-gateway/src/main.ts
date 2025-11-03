@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -15,7 +16,22 @@ async function bootstrap(): Promise<void> {
       forbidNonWhitelisted: true,
     }),
   );
-  app.enableCors({ origin: '*' });
+
+  // CORS configuration via env
+  const config = app.get(ConfigService);
+  const originEnv = config.get<string>('CORS_ORIGIN', '*');
+  const credentialsEnv = config.get<string>('CORS_CREDENTIALS', 'false');
+  const credentials = ['1', 'true', 'yes', 'on'].includes(String(credentialsEnv).toLowerCase());
+
+  let origin: true | string[] = true;
+  if (originEnv && originEnv !== '*') {
+    const list = originEnv
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    if (list.length) origin = list as string[];
+  }
+  app.enableCors({ origin, credentials });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Jungle Gaming API Gateway')
