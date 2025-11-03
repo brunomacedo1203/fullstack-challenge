@@ -103,10 +103,13 @@ docker compose up --build
 | --------------------- | ----- | ------------------------------------ |
 | Web (WIP)             | 3000  | http://localhost:3000                |
 | API Gateway           | 3001  | http://localhost:3001                |
+| Health (Gateway)      | —     | http://localhost:3001/api/health     |
 | Swagger (Gateway)     | —     | http://localhost:3001/api/docs       |
 | Auth Service          | 3002  | http://localhost:3002                |
 | Tasks Service         | 3003  | http://localhost:3003                |
+| Health (Tasks)        | —     | http://localhost:3003/health         |
 | Notifications Service | 3004  | http://localhost:3004                |
+| Health (Notifs)       | —     | http://localhost:3004/health         |
 | RabbitMQ UI           | 15672 | http://localhost:15672 (admin/admin) |
 
 ---
@@ -136,6 +139,11 @@ Se estiver usando o `docker compose up`, os serviços de Auth e Notifications j�
 ```bash
 npm run typecheck --workspace=@jungle/tasks-service
 npm run build --workspace=@jungle/tasks-service
+
+# Health endpoints
+curl -sfS http://localhost:3001/api/health
+curl -sfS http://localhost:3003/health
+curl -sfS http://localhost:3004/health
 ```
 
 ---
@@ -161,6 +169,35 @@ npm run build --workspace=@jungle/tasks-service
 3. Faça login e obtenha os tokens
 4. Clique em **Authorize** e insira `Bearer <accessToken>`
 5. Teste as rotas de Tasks autenticadas
+
+—
+
+### CORS e Rate-limit (Gateway)
+
+O Gateway agora aceita configuração via `.env`:
+
+- `CORS_ORIGIN`: lista separada por vírgulas de origens permitidas (ou `*`). Ex.: `http://localhost:3000,http://127.0.0.1:3000`.
+- `CORS_CREDENTIALS`: `true`/`false`.
+- `THROTTLE_TTL`: janela (segundos) para rate-limit.
+- `THROTTLE_LIMIT`: requisições por janela.
+
+Veja `apps/api-gateway/.env.example` para valores padrão.
+
+### Notificações HTTP autenticadas
+
+`GET /notifications` no notifications-service agora requer JWT e deriva o `recipientId` do token:
+
+```
+curl -H "Authorization: Bearer $ACCESS_TOKEN" "http://localhost:3004/notifications?size=10"
+```
+
+—
+
+### Front-end: WebSocket e Auto-refresh de Token
+
+- O front conecta ao WS usando `VITE_WS_URL` (ex.: `ws://localhost:3004`).
+- Ao receber 401 das APIs, o front tenta `POST /auth/refresh` via Gateway e reexecuta a requisição original.
+- Notificações em tempo real exibem toasts e um badge de "não lidas" (máx. 10) no cabeçalho.
 
 ---
 
