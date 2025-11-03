@@ -1,10 +1,8 @@
-import { randomUUID } from 'crypto';
 import {
-  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
@@ -13,7 +11,7 @@ import {
 @Unique(['email'])
 @Unique(['username'])
 export class User {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ length: 255 })
@@ -33,11 +31,4 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
-
-  @BeforeInsert()
-  assignId(): void {
-    if (!this.id) {
-      this.id = randomUUID();
-    }
-  }
 }
