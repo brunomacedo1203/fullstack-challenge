@@ -1,10 +1,19 @@
-export function createPlaceholderApp(): void {
-  console.log('Web app placeholder running');
-  setInterval(() => {
-    console.log('Web app heartbeat');
-  }, 60_000);
-}
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { RouterProvider } from '@tanstack/react-router';
+import './styles.css';
+import { router } from './router';
+import { useAuthStore } from './features/auth/store';
 
-createPlaceholderApp();
+const rootEl = document.getElementById('root')!;
 
-export default createPlaceholderApp;
+const Root = () => {
+  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
+  return <RouterProvider router={router} context={{ isAuthenticated }} />;
+};
+
+createRoot(rootEl).render(
+  <React.StrictMode>
+    <Root />
+  </React.StrictMode>,
+);
