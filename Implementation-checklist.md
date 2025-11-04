@@ -375,30 +375,30 @@ _Checkpoint:_ Backend emite notificações em tempo real e sincroniza pendentes 
 ### 🔹 Fases & Subtasks
 
 1. **Fase 1 — Cliente WebSocket**
-   - [ ] Hook `useWebSocket` com URL (`wss://.../ws?token=`).
-   - [ ] Autenticar via `accessToken` do Zustand.
-   - [ ] Keep-alive com `heartbeat`.
+   - [x] Hook `useWebSocket` com URL (`wss://.../ws?token=`).
+   - [x] Autenticar via `accessToken` do Zustand.
+   - [x] Keep-alive com `heartbeat`.
    - **Commit:** `feat(web): setup WebSocket client with JWT authentication`
 
    _Checkpoint:_ Conexão WS autentica e permanece estável (reconnect/heartbeat).
 
 2. **Fase 2 — Integração com notificações**
-   - [ ] Store `useNotificationsStore`.
-   - [ ] Tratar eventos `task:created`, `task:updated`, `comment:new`.
-   - [ ] Exibir toasts e badge contador; `GET /notifications` para bootstrap.
+   - [x] Store `useNotificationsStore`.
+   - [x] Tratar eventos `task:created`, `task:updated`, `comment:new`.
+   - [x] Exibir toasts e badge contador; `GET /notifications` para bootstrap.
    - **Commit:** `feat(web): integrate real-time notifications via WebSocket`
 
    _Checkpoint:_ Ao criar/atualizar/comentar, o outro usuário recebe toast/badge em tempo real.
 
 3. **Fase 3 — UI e UX refinados**
-   - [ ] Dropdown de notificações no header.
-   - [ ] Mostrar data/resumo/link; marcar como lida ao clicar.
-   - [ ] Ajustes de UX (empty states/animações leves).
+   - [x] Dropdown de notificações no header.
+   - [x] Mostrar data/resumo/link; marcar como lida ao clicar.
+   - [x] Ajustes de UX (empty states/animações leves).
    - **Commit:** `style(web): refine notification center and UX polish`
 
 4. **Fase 4 — QA e testes**
-   - [ ] E2E com 2 usuários e 2 abas.
-   - [ ] Recuperação de notificações antigas ao reconectar.
+   - [x] E2E com 2 usuários e 2 abas.
+   - [x] Recuperação de notificações antigas ao reconectar.
    - **Commit:** `chore(web): validate real-time flows and fix edge cases`
 
 **Checkpoint (do dia):** Toasts e badges em tempo real entre usuários/abas; centro de notificações funcional.
