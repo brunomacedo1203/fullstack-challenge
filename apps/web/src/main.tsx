@@ -7,6 +7,7 @@ import './styles.css';
 import { router } from './router';
 import { useAuthStore } from './features/auth/store';
 import { useNotifications } from './hooks/useNotifications';
+import { useNotificationsPolling } from './hooks/useNotificationsPolling';
 
 const rootEl = document.getElementById('root')!;
 
@@ -16,6 +17,8 @@ const Root = () => {
   const isAuthenticated = useAuthStore((s) => !!s.accessToken);
   // Initialize WS notifications when authenticated
   useNotifications();
+  // Fallback polling to keep badge in sync if WS misses updates
+  useNotificationsPolling(30000);
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>

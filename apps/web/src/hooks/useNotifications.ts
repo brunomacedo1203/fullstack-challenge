@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../features/auth/store';
 import { useToast } from '../components/ui/toast';
+import { useNotificationsStore } from '../features/notifications/store';
 
 function getWsBaseUrl(): string {
   const env = (import.meta as any).env?.VITE_WS_URL as string | undefined;
@@ -20,6 +21,8 @@ export function useNotifications(): void {
   const hbRef = useRef<number | null>(null);
   const reconnectRef = useRef<number | null>(null);
   const attemptsRef = useRef(0);
+  const bootstrap = useNotificationsStore((s) => s.bootstrap);
+  const addUnread = useNotificationsStore((s) => s.add);
 
   useEffect(() => {
     let stopped = false;
@@ -50,25 +53,35 @@ export function useNotifications(): void {
             socket.send('ping');
           } catch {}
         }, 30000);
+        // Bootstrap unread on connect
+        bootstrap(10).catch(() => {});
       });
 
       socket.addEventListener('message', (ev) => {
         try {
           const payload = JSON.parse(ev.data);
           const event = payload?.event as string | undefined;
+          const data = payload?.data;
           if (!event) return;
           switch (event) {
             case 'task:created':
               show('Nova tarefa criada', { type: 'info' });
+              // refresh unread list to reflect new notification
+              bootstrap(10).catch(() => {});
               break;
             case 'task:updated':
               show('Tarefa atualizada', { type: 'info' });
+              bootstrap(10).catch(() => {});
               break;
             case 'comment:new':
               show('Novo comentário', { type: 'info' });
+              bootstrap(10).catch(() => {});
               break;
             case 'notification:unread':
-              // initial sync item
+              // unread item pushed by server (on connect)
+              if (data && typeof data === 'object') {
+                addUnread(data);
+              }
               break;
             default:
               break;
