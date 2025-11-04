@@ -223,7 +223,7 @@ export class TasksService {
       throw new BadRequestException('Comment content must not be empty');
     }
 
-    const resolvedAuthorId = actorId ?? dto.authorId ?? null;
+    const resolvedAuthorId = actorId ?? null;
 
     const comment = await this.tasksRepo.manager.transaction(async (manager) => {
       const taskRepo = manager.getRepository(Task);
