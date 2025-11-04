@@ -1,0 +1,112 @@
+# 🧰 Jungle Gaming — Utils
+# Comandos úteis para checagens rápidas, QA e debug local.
+# Execute-os a partir da raiz do projeto (fullstack-challenge/)
+
+docker_stack: |
+  # 🐳 Docker Stack
+  # Subir toda a stack (build + run)
+  docker compose up --build
+
+  # Listar containers ativos
+  docker ps
+
+  # Logs em tempo real de serviços específicos
+  docker compose logs -f api-gateway
+  docker compose logs -f notifications-service
+
+  # Parar e limpar volumes e imagens órfãs
+  docker compose down -v
+
+database: |
+  # 🗄️ Banco de Dados (PostgreSQL)
+  # Entrar no container do banco e listar databases
+  docker exec -it db psql -U postgres -l
+
+  # Conectar ao banco principal do desafio
+  docker exec -it db psql -U postgres challenge_db
+
+  # Mostrar tabelas do schema atual
+  \dt
+
+  # Sair do psql
+  \q
+
+health_checks: |
+  # 🩺 Health Checks
+  # Gateway (único exposto via localhost)
+  curl -sfS http://localhost:3001/api/health
+
+  # Serviços internos (rodar de dentro do gateway)
+  docker compose exec api-gateway wget -qO- http://tasks-service:3003/health
+  docker compose exec api-gateway wget -qO- http://notifications-service:3004/health
+
+  # ✅ Esperado:
+  # {"status":"ok","service":"tasks-service","timestamp":"..."}
+  # {"status":"ok","service":"notifications-service","timestamp":"..."}
+
+rabbitmq: |
+  # 🐇 RabbitMQ
+  # Acessar interface web
+  # URL: http://localhost:15672
+  # Login: admin | Senha: admin
+
+  # Criar fila efêmera para debug
+  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin declare queue name=debug-tasks-events durable=false
+  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin declare binding source=tasks.events destination=debug-tasks-events routing_key='#'
+
+  # Consumir mensagens
+  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin get queue=debug-tasks-events count=10
+
+  # Remover fila após uso
+  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin delete queue name=debug-tasks-events
+
+auth_jwt: |
+  # 🔐 Autenticação e JWT
+  # Login manual via curl
+  curl -X POST http://localhost:3001/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"user@example.com","password":"123456"}'
+
+  # Testar rota protegida
+  curl -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:3001/api/tasks
+
+websocket: |
+  # 🌐 WebSocket (Notificações em Tempo Real)
+  # Instalar utilitário (uma vez)
+  npm install -g wscat
+
+  # Conectar ao WebSocket (substitua pelo seu token)
+  npx wscat -c "ws://localhost:3004/ws?token=$ACCESS_TOKEN"
+
+migrations: |
+  # 🧱 Migrations
+  # Rodar migrations manualmente (se não subir no boot)
+  docker compose exec auth-service npm run migration:run
+  docker compose exec tasks-service npm run migration:run
+  docker compose exec notifications-service npm run migration:run
+
+build_and_lint: |
+  # 🧪 Build e Lint
+  # Build global do monorepo
+  turbo run build
+
+  # Build específico do frontend
+  npm run build --workspace=@jungle/web
+
+  # Lint global
+  npm run lint --workspaces
+
+diagnostics: |
+  # 🔍 Diagnóstico rápido
+  # Últimas 50 linhas de log
+  docker compose logs --tail=50
+
+  # Estatísticas de CPU e memória
+  docker stats
+
+ui_urls: |
+  # 📘 UIs principais
+  # Frontend: http://localhost:3000
+  # API Gateway (Swagger): http://localhost:3001/api/docs
+  # RabbitMQ UI: http://localhost:15672
+  # Banco de Dados (DBeaver): Host=localhost, Port=5432, DB=challenge_db
