@@ -38,8 +38,6 @@ services:
     restart: always
     env_file:
       - ./apps/auth-service/.env
-    ports:
-      - '3002:3002'
     depends_on:
       - db
       - rabbitmq
@@ -54,8 +52,6 @@ services:
     restart: always
     env_file:
       - ./apps/tasks-service/.env
-    ports:
-      - '3003:3003'
     depends_on:
       - db
       - rabbitmq
@@ -70,8 +66,6 @@ services:
     restart: always
     env_file:
       - ./apps/notifications-service/.env
-    ports:
-      - '3004:3004'
     depends_on:
       - db
       - rabbitmq

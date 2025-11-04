@@ -114,6 +114,8 @@ docker compose up --build
 
 ---
 
+Nota de segurança: os microserviços internos (Auth, Tasks e Notifications) não expõem mais portas públicas no Docker Compose. A comunicação externa deve ocorrer apenas via API Gateway. Para depuração direta, use `docker compose exec` dentro dos containers ou acesse pelos nomes de host internos da rede do Compose.
+
 ### 5️⃣ Rodar migrations
 
 Após a stack estar de pé, execute:
