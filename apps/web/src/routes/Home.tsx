@@ -6,6 +6,8 @@ import { listTasks } from '../features/tasks/tasks.api';
 import { useNotificationsStore } from '../features/notifications/store';
 import { Link } from '@tanstack/react-router';
 import { Bell, Clock, AlertCircle, MessageSquare, TrendingUp } from 'lucide-react';
+import { getRelativeTime, isSameDayISO } from '../lib/time';
+import { getPriorityColor, formatDueDate } from '../features/tasks/utils';
 
 export const HomePage: React.FC = () => {
   useAuthGuard();
@@ -22,23 +24,17 @@ export const HomePage: React.FC = () => {
   const subtitle = useMemo(() => {
     const tasks = data?.data ?? [];
     const today = new Date();
-    const isSameDay = (iso?: string | null) => {
-      if (!iso) return false;
-      const d = new Date(iso);
-      return (
-        d.getFullYear() === today.getFullYear() &&
-        d.getMonth() === today.getMonth() &&
-        d.getDate() === today.getDate()
-      );
-    };
 
     const pendingToday = tasks.filter(
       (t) =>
-        (t.status === 'TODO' || t.status === 'IN_PROGRESS') && isSameDay(t.dueDate ?? undefined),
+        (t.status === 'TODO' || t.status === 'IN_PROGRESS') &&
+        isSameDayISO(t.dueDate ?? undefined, today),
     ).length;
 
     if (unreadCount > 0) {
-      return `${unreadCount} nova${unreadCount > 1 ? 's' : ''} notificaç${unreadCount > 1 ? 'ões' : 'ão'} desde sua última visita`;
+      return `${unreadCount} nova${unreadCount > 1 ? 's' : ''} notificaç${
+        unreadCount > 1 ? 'ões' : 'ão'
+      } desde sua última visita`;
     }
     if (pendingToday > 0) {
       return `Você tem ${pendingToday} tarefa${pendingToday > 1 ? 's' : ''} pendente${
@@ -88,47 +84,7 @@ export const HomePage: React.FC = () => {
     }));
   }, [notifications]);
 
-  const getRelativeTime = (isoDate: string) => {
-    const now = new Date();
-    const date = new Date(isoDate);
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffMins < 1) return 'agora';
-    if (diffMins < 60) return `há ${diffMins}min`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `há ${diffHours}h`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `há ${diffDays}d`;
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'URGENT':
-        return 'text-red-500';
-      case 'HIGH':
-        return 'text-orange-500';
-      case 'MEDIUM':
-        return 'text-yellow-500';
-      case 'LOW':
-        return 'text-blue-500';
-      default:
-        return 'text-foreground/70';
-    }
-  };
-
-  const formatDueDate = (dueDate?: string | null) => {
-    if (!dueDate) return null;
-    const date = new Date(dueDate);
-    const now = new Date();
-    const diffMs = date.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) return 'Atrasada';
-    if (diffDays === 0) return 'Vence hoje';
-    if (diffDays === 1) return 'Vence amanhã';
-    return `${diffDays} dias`;
-  };
+  // getRelativeTime, getPriorityColor e formatDueDate foram extraídos para utilitários
 
   return (
     <div className="min-h-[calc(100vh-4rem)] py-8 px-4 max-w-7xl mx-auto">
