@@ -399,17 +399,14 @@ quick_reference: |
 
 # "Estou desenvolvendo e quero ver mudanças instantâneas"
 
-# → npm run dev --workspace=@jungle/web
+→ Entrar em apps/web e rodar: npm run dev
+→ Frontend em http://localhost:3002
 
-# → Frontend em http://localhost:5173
-
-#
-
-# "Quero testar a aplicação completa como em produção"
+# "Quero testar a aplicação completa como em produção
 
 # → docker compose up --build
 
-# → Frontend em http://localhost:3000
+→ Frontend em http://localhost:3000
 
 #
 
@@ -417,7 +414,7 @@ quick_reference: |
 
 # → npm run build && npm run preview --workspace=@jungle/web
 
-# → Frontend em http://localhost:4173
+→ Frontend em http://localhost:4173
 
 #
 
