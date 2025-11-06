@@ -25,3 +25,25 @@ export function formatDueDate(dueDate?: string | null): string | null {
   if (diffDays === 1) return 'Vence amanhã';
   return `${diffDays} dias`;
 }
+
+const STATUS_PT: Record<string, string> = {
+  TODO: 'A fazer',
+  IN_PROGRESS: 'Em andamento',
+  REVIEW: 'Em revisão',
+  DONE: 'Concluída',
+};
+
+const PRIORITY_PT: Record<string, string> = {
+  LOW: 'Baixa',
+  MEDIUM: 'Média',
+  HIGH: 'Alta',
+  URGENT: 'Urgente',
+};
+
+export function statusToPt(status: string): string {
+  return STATUS_PT[status] ?? status;
+}
+
+export function priorityToPt(priority: string): string {
+  return PRIORITY_PT[priority] ?? priority;
+}

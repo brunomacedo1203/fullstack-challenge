@@ -22,6 +22,9 @@ export async function listTasks(
       createdAt: new Date(t.createdAt as unknown as string).toISOString(),
       updatedAt: new Date(t.updatedAt as unknown as string).toISOString(),
       dueDate: t.dueDate ? new Date(t.dueDate as unknown as string).toISOString() : null,
+      lastAssignedAt: (t as any).lastAssignedAt
+        ? new Date((t as any).lastAssignedAt as string).toISOString()
+        : undefined,
     })),
   };
 }
@@ -33,6 +36,9 @@ export async function getTask(id: UUID): Promise<Task> {
     createdAt: new Date(data.createdAt as unknown as string).toISOString(),
     updatedAt: new Date(data.updatedAt as unknown as string).toISOString(),
     dueDate: data.dueDate ? new Date(data.dueDate as unknown as string).toISOString() : null,
+    lastAssignedAt: (data as any).lastAssignedAt
+      ? new Date((data as any).lastAssignedAt as string).toISOString()
+      : undefined,
   };
 }
 

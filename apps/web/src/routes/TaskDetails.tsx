@@ -109,7 +109,6 @@ export const TaskDetailsPage: React.FC = () => {
     },
     onSuccess: async () => {
       show('Tarefa atualizada!', { type: 'success' });
-      // Define os valores atuais como baseline para limpar o estado "dirty"
       reset(getValues());
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['task', id] }),
@@ -121,8 +120,6 @@ export const TaskDetailsPage: React.FC = () => {
       show(String(msg), { type: 'error' });
     },
   });
-
-  // Botão de excluir removido conforme solicitação
 
   if (isLoading) {
     return (
@@ -149,15 +146,39 @@ export const TaskDetailsPage: React.FC = () => {
     );
   }
 
-  // Ação de voltar substitui o botão de exclusão
+  // NOVO: Verificar se está atribuída ao usuário atual
+  const isAssignedToMe = task.assigneeIds.includes(currentUserId || '');
 
   return (
     <div className="space-y-8 p-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-gaming font-bold text-primary mb-2">{task.title}</h1>
+          {/* MELHORIA: Texto mais claro quando atribuída ao usuário */}
           <p className="text-sm text-foreground/60">
-            Criada em {new Date(task.createdAt).toLocaleString()}
+            Criada em {new Date(task.createdAt).toLocaleString('pt-BR')}
+            {task.lastAssignedByUsername || task.lastAssignedById || task.lastAssignedAt ? (
+              <>
+                {' '}
+                •{' '}
+                {isAssignedToMe ? (
+                  <span className="text-accent">
+                    Atribuída a você por{' '}
+                    {task.lastAssignedByUsername ??
+                      (task.lastAssignedById ? task.lastAssignedById.slice(0, 8) : '—')}
+                  </span>
+                ) : (
+                  <span>
+                    Atribuída por{' '}
+                    {task.lastAssignedByUsername ??
+                      (task.lastAssignedById ? task.lastAssignedById.slice(0, 8) : '—')}
+                  </span>
+                )}
+                {task.lastAssignedAt
+                  ? ` em ${new Date(task.lastAssignedAt).toLocaleString('pt-BR')}`
+                  : ''}
+              </>
+            ) : null}
           </p>
         </div>
         <div className="flex gap-2">
@@ -194,25 +215,25 @@ export const TaskDetailsPage: React.FC = () => {
             <Textarea id="description" rows={4} {...register('description')} />
           </div>
           <div>
-            <Label htmlFor="dueDate">Data limite (YYYY-MM-DD)</Label>
-            <Input id="dueDate" {...register('dueDate')} />
+            <Label htmlFor="dueDate">Data limite</Label>
+            <Input id="dueDate" type="date" {...register('dueDate')} />
           </div>
           <div>
             <Label>Status</Label>
             <Select {...register('status')} defaultValue={task.status}>
-              <option value="TODO">TODO</option>
-              <option value="IN_PROGRESS">IN_PROGRESS</option>
-              <option value="REVIEW">REVIEW</option>
-              <option value="DONE">DONE</option>
+              <option value="TODO">A fazer</option>
+              <option value="IN_PROGRESS">Em andamento</option>
+              <option value="REVIEW">Em revisão</option>
+              <option value="DONE">Concluída</option>
             </Select>
           </div>
           <div>
             <Label>Prioridade</Label>
             <Select {...register('priority')} defaultValue={task.priority}>
-              <option value="LOW">LOW</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="HIGH">HIGH</option>
-              <option value="URGENT">URGENT</option>
+              <option value="LOW">Baixa</option>
+              <option value="MEDIUM">Média</option>
+              <option value="HIGH">Alta</option>
+              <option value="URGENT">Urgente</option>
             </Select>
           </div>
           <div className="md:col-span-2">

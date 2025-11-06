@@ -17,6 +17,10 @@ export type Task = {
   createdAt: string; // ISO
   updatedAt: string; // ISO
   assigneeIds: UUID[];
+  // Optional metadata provided by backend to indicate the last assignment actor/time
+  lastAssignedById?: UUID;
+  lastAssignedByUsername?: string;
+  lastAssignedAt?: string; // ISO
 };
 
 export type CreateTaskInput = {
