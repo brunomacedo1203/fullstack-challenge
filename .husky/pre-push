@@ -3,4 +3,4 @@
 
 # Format everything before running the full check suite
 npm run format
-npm run check-all
+  npm run check-all
