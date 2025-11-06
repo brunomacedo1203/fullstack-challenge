@@ -17,6 +17,7 @@ import { CommentsSection } from '../components/CommentsSection';
 import { HistorySection } from '../components/HistorySection';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AssigneesPicker from '../components/AssigneesPicker';
+import { listHistory } from '../features/tasks/tasks.api';
 import { listUsers, type UserSummary } from '../features/users/users.api';
 import { useAuthStore } from '../features/auth/store';
 
@@ -89,6 +90,31 @@ export const TaskDetailsPage: React.FC = () => {
   const joinCsv = (ids: string[]) => ids.join(', ');
 
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
+
+  // Resolve creator (front-only gating; backend enforcement still recommended)
+  const { data: historyData } = useQuery({
+    queryKey: ['task-history-for-edit-gate', id],
+    queryFn: () => listHistory(id, { page: 1, size: 50 }),
+    enabled: !!id,
+    staleTime: 60_000,
+  });
+
+  const creatorId = useMemo(() => {
+    const events = historyData?.data ?? [];
+    let found: string | undefined;
+    for (let i = events.length - 1; i >= 0; i--) {
+      const e = events[i];
+      if (e.type === 'TASK_CREATED' && e.actorId) {
+        found = e.actorId;
+      }
+    }
+    return found;
+  }, [historyData]);
+
+  const canEdit = useMemo(() => {
+    if (!creatorId || !currentUserId) return true;
+    return creatorId === currentUserId;
+  }, [creatorId, currentUserId]);
 
   const saveMutation = useMutation({
     mutationFn: (values: EditTaskForm) => {
@@ -203,24 +229,29 @@ export const TaskDetailsPage: React.FC = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
           onSubmit={handleSubmit((values) => saveMutation.mutate(values))}
         >
+          {!canEdit && (
+            <div className="md:col-span-2 mb-2 rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-xs text-yellow-300">
+              Somente o criador desta tarefa pode editar os campos abaixo. Você ainda pode comentar.
+            </div>
+          )}
           <div className="md:col-span-2">
             <Label htmlFor="title">Título</Label>
-            <Input id="title" {...register('title')} />
+            <Input id="title" {...register('title')} disabled={!canEdit} />
             {errors.title && (
               <p className="text-sm text-red-400 mt-1 font-medium">{errors.title.message}</p>
             )}
           </div>
           <div className="md:col-span-2">
             <Label htmlFor="description">Descrição</Label>
-            <Textarea id="description" rows={4} {...register('description')} />
+            <Textarea id="description" rows={4} {...register('description')} disabled={!canEdit} />
           </div>
           <div>
             <Label htmlFor="dueDate">Data limite</Label>
-            <Input id="dueDate" type="date" {...register('dueDate')} />
+            <Input id="dueDate" type="date" {...register('dueDate')} disabled={!canEdit} />
           </div>
           <div>
             <Label>Status</Label>
-            <Select {...register('status')} defaultValue={task.status}>
+            <Select {...register('status')} defaultValue={task.status} disabled={!canEdit}>
               <option value="TODO">A fazer</option>
               <option value="IN_PROGRESS">Em andamento</option>
               <option value="REVIEW">Em revisão</option>
@@ -229,7 +260,7 @@ export const TaskDetailsPage: React.FC = () => {
           </div>
           <div>
             <Label>Prioridade</Label>
-            <Select {...register('priority')} defaultValue={task.priority}>
+            <Select {...register('priority')} defaultValue={task.priority} disabled={!canEdit}>
               <option value="LOW">Baixa</option>
               <option value="MEDIUM">Média</option>
               <option value="HIGH">Alta</option>
@@ -247,6 +278,7 @@ export const TaskDetailsPage: React.FC = () => {
               placeholder="Selecione usuários"
               loading={isLoadingUsers}
               error={isErrorUsers}
+              disabled={!canEdit}
               onChange={(ids) =>
                 setValue('assigneeIds', joinCsv(ids), {
                   shouldDirty: true,
@@ -259,7 +291,7 @@ export const TaskDetailsPage: React.FC = () => {
           <div className="md:col-span-2 flex justify-end gap-3">
             <Button
               type="submit"
-              disabled={saveMutation.isPending || !isDirty}
+              disabled={saveMutation.isPending || !isDirty || !canEdit}
               variant="secondary"
               size="lg"
             >

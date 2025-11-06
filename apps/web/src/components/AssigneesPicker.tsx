@@ -11,6 +11,7 @@ export type AssigneesPickerProps = {
   placeholder?: string;
   loading?: boolean;
   error?: boolean;
+  disabled?: boolean;
 };
 
 export const AssigneesPicker: React.FC<AssigneesPickerProps> = ({
@@ -22,6 +23,7 @@ export const AssigneesPicker: React.FC<AssigneesPickerProps> = ({
   placeholder = 'Selecione usuários',
   loading = false,
   error = false,
+  disabled = false,
 }) => {
   const [open, setOpen] = useState(false);
   const blurTimeout = useRef<number | null>(null);
@@ -49,6 +51,7 @@ export const AssigneesPicker: React.FC<AssigneesPickerProps> = ({
   }, [valueIds, usersById]);
 
   const toggle = (id: string) => {
+    if (disabled) return;
     const next = new Set(selected);
     if (next.has(id)) next.delete(id);
     else next.add(id);
@@ -71,15 +74,16 @@ export const AssigneesPicker: React.FC<AssigneesPickerProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className={`relative ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
       <Input
         id={inputId}
         placeholder={placeholder}
         value={display}
         readOnly
         onFocus={handleFocus}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => !disabled && setOpen((v) => !v)}
         onKeyDown={(e) => {
+          if (disabled) return;
           if (e.key === 'Enter' || e.key === 'ArrowDown') {
             e.preventDefault();
             setOpen(true);
@@ -92,7 +96,7 @@ export const AssigneesPicker: React.FC<AssigneesPickerProps> = ({
         onBlur={handleBlur}
       />
 
-      {open && (
+      {open && !disabled && (
         <div className="absolute z-20 mt-2 w-full max-h-60 overflow-y-auto rounded-lg border-2 border-border bg-gaming-light/95 p-3 shadow-xl">
           {loading && <p className="text-xs text-muted-foreground">Carregando usuários...</p>}
           {error && !loading && (
@@ -157,6 +161,7 @@ export const AssigneesPicker: React.FC<AssigneesPickerProps> = ({
                   type="button"
                   className="rounded-full border border-primary/50 px-2 py-0.5 text-[10px] uppercase tracking-wide hover:bg-primary/20"
                   onClick={() => toggle(id)}
+                  disabled={disabled}
                 >
                   Remover
                 </button>
