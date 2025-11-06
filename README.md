@@ -490,7 +490,10 @@ Nesta etapa foi implementado o **serviço de notificações em tempo real**, con
 
 ### 🖼️ **Figura 11 – RabbitMQ UI (Dia 6)**
 
-Interface do RabbitMQ exibindo o exchange `tasks.events` e a fila `notifications.q` recebendo mensagens.
+Interface do RabbitMQ exibindo o _exchange_ `tasks.events` do tipo **topic**, com a fila `notifications.q` vinculada através do _binding key_ `task.#`.  
+Esse mapeamento garante que todos os eventos publicados pelo **Tasks Service** (`task.created`, `task.updated`, `task.comment.created`) sejam roteados para o **Notifications Service**, responsável por consumi-los e emitir notificações em tempo real via WebSocket.
+
+O gráfico confirma a publicação e o consumo imediato dos eventos — evidenciando a comunicação assíncrona entre microserviços.
 
 ![Figura 11 – RabbitMQ UI (Dia 6)](./docs/images/day-06/fig-11-rabbitmq-consumer.png)
 
@@ -500,17 +503,13 @@ Interface do RabbitMQ exibindo o exchange `tasks.events` e a fila `notifications
 
 Tabelas `notifications` e `task_participants` adicionadas ao schema, responsáveis por armazenar destinatários e notificações pendentes.
 
-![Figura 12 – Estrutura do banco (Dia 6)](./docs/images/day-06/fig-12-db-notifications-participants.png)
-
----
+## ![Figura 12 – Estrutura do banco (Dia 6)](./docs/images/day-06/fig-12-db-notifications-participants.png)
 
 ### 🖼️ **Figura 13 – WebSocket conectado (Dia 6)**
 
 Captura do console com a conexão WebSocket autenticada (`ws://localhost:3004/ws?token=<JWT>`).
 
-![Figura 13 – WebSocket conectado](./docs/images/day-06/fig-13-ws-connected.png)
-
----
+## ![Figura 13 – WebSocket conectado](./docs/images/day-06/fig-13-ws-connected.png)
 
 ## 🗓️ DIA 7 – Frontend (Setup + Auth)
 
@@ -645,8 +644,6 @@ Durante os testes de QA, foram executados:
 - Aplicação Web (`web`)
 
 As portas expostas (`5432`, `15672`, `3000`, `3001`) confirmam o mapeamento correto de cada componente.
-
----
 
 ---
 
