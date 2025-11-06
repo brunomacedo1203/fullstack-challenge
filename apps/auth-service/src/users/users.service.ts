@@ -9,6 +9,12 @@ export interface CreateUserInput {
   passwordHash: string;
 }
 
+export type UserSummary = {
+  id: string;
+  username: string;
+  email: string;
+};
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -36,5 +42,18 @@ export class UsersService {
 
   async updateRefreshToken(userId: string, refreshTokenHash: string | null): Promise<void> {
     await this.usersRepository.update({ id: userId }, { refreshTokenHash });
+  }
+
+  async findAllSummaries(): Promise<UserSummary[]> {
+    const users = await this.usersRepository.find({
+      select: {
+        id: true,
+        username: true,
+        email: true,
+      },
+      order: { username: 'ASC' },
+    });
+
+    return users;
   }
 }
