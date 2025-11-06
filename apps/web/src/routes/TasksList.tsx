@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { listTasks, createTask } from '../features/tasks/tasks.api';
 import type { Task } from '../features/tasks/types';
@@ -13,6 +13,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '../components/ui/toast';
+import { useAuthStore } from '../features/auth/store';
+import { listUsers, type UserSummary } from '../features/users/users.api';
 
 const createTaskSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório').max(255),
@@ -42,6 +44,16 @@ export const TasksListPage: React.FC = () => {
   });
 
   const tasks = data?.data ?? [];
+
+  const {
+    data: usersData,
+    isLoading: isLoadingUsers,
+    isError: isErrorUsers,
+  } = useQuery({
+    queryKey: ['users'],
+    queryFn: listUsers,
+    staleTime: 60_000,
+  });
 
   const filtered = useMemo(() => {
     let list: Task[] = tasks;
@@ -91,7 +103,87 @@ export const TasksListPage: React.FC = () => {
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<CreateTaskForm>({ resolver: zodResolver(createTaskSchema) });
+
+  const currentUserId = useAuthStore((state) => state.user?.id ?? null);
+  const assigneeInputValue = watch('assigneeIds') ?? '';
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
+  const assigneeBlurTimeout = useRef<number | null>(null);
+
+  const availableUsers: UserSummary[] = useMemo(() => {
+    if (!usersData) return [];
+    return usersData.filter((user) => (currentUserId ? user.id !== currentUserId : true));
+  }, [usersData, currentUserId]);
+
+  const usersById = useMemo(() => {
+    const map = new Map<string, UserSummary>();
+    for (const user of usersData ?? []) {
+      map.set(user.id, user);
+    }
+    return map;
+  }, [usersData]);
+
+  const selectedAssigneeIds = useMemo(() => {
+    return new Set(
+      assigneeInputValue
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+  }, [assigneeInputValue]);
+
+  const toggleAssignee = (id: string) => {
+    const next = new Set(selectedAssigneeIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    const value = Array.from(next).join(', ');
+    setValue('assigneeIds', value, { shouldDirty: true, shouldTouch: true, shouldValidate: false });
+  };
+
+  const handleAssigneeFocus = () => {
+    if (assigneeBlurTimeout.current) {
+      window.clearTimeout(assigneeBlurTimeout.current);
+      assigneeBlurTimeout.current = null;
+    }
+  };
+
+  const toggleAssigneeDropdown = () => {
+    if (assigneeBlurTimeout.current) {
+      window.clearTimeout(assigneeBlurTimeout.current);
+      assigneeBlurTimeout.current = null;
+    }
+    setAssigneeDropdownOpen((v) => !v);
+  };
+
+  const handleAssigneeBlur = () => {
+    if (assigneeBlurTimeout.current) {
+      window.clearTimeout(assigneeBlurTimeout.current);
+    }
+    assigneeBlurTimeout.current = window.setTimeout(() => {
+      setAssigneeDropdownOpen(false);
+      assigneeBlurTimeout.current = null;
+    }, 120);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (assigneeBlurTimeout.current) {
+        window.clearTimeout(assigneeBlurTimeout.current);
+      }
+    };
+  }, []);
+
+  const assigneeField = register('assigneeIds');
+  const assigneeDisplay = useMemo(() => {
+    return Array.from(selectedAssigneeIds)
+      .map((id) => usersById.get(id)?.username ?? id)
+      .join(', ');
+  }, [selectedAssigneeIds, usersById]);
 
   return (
     <div className="space-y-6 p-4">
@@ -145,8 +237,118 @@ export const TasksListPage: React.FC = () => {
               </Select>
             </div>
             <div className="md:col-span-2">
-              <Label>Assignees (IDs separados por vírgula)</Label>
-              <Input placeholder="uuid-1, uuid-2" {...register('assigneeIds')} />
+              <Label htmlFor="create-assignee-ids">Atribuir tarefa</Label>
+              <div className="relative">
+                <input type="hidden" {...assigneeField} />
+                <Input
+                  id="create-assignee-ids"
+                  placeholder="Selecione usuários"
+                  value={assigneeDisplay}
+                  readOnly
+                  onFocus={() => {
+                    handleAssigneeFocus();
+                  }}
+                  onClick={() => {
+                    toggleAssigneeDropdown();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setAssigneeDropdownOpen(true);
+                    }
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setAssigneeDropdownOpen(false);
+                    }
+                  }}
+                  onBlur={() => {
+                    handleAssigneeBlur();
+                  }}
+                />
+                {assigneeDropdownOpen && (
+                  <div className="absolute z-20 mt-2 w-full max-h-60 overflow-y-auto rounded-lg border-2 border-border bg-gaming-light/95 p-3 shadow-xl">
+                    {isLoadingUsers && (
+                      <p className="text-xs text-muted-foreground">Carregando usuários...</p>
+                    )}
+                    {isErrorUsers && !isLoadingUsers && (
+                      <p className="text-xs text-red-400">
+                        Não foi possível carregar os usuários. Tente novamente mais tarde.
+                      </p>
+                    )}
+                    {!isLoadingUsers && !isErrorUsers && availableUsers.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhum outro usuário encontrado para atribuição.
+                      </p>
+                    )}
+                    {!isLoadingUsers && !isErrorUsers && availableUsers.length > 0 && (
+                      <>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Clique para adicionar ou remover participantes.
+                        </p>
+                        <ul className="space-y-1">
+                          {availableUsers.map((user) => {
+                            const selected = selectedAssigneeIds.has(user.id);
+                            return (
+                              <li key={user.id}>
+                                <button
+                                  type="button"
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                    toggleAssignee(user.id);
+                                  }}
+                                  className={`flex w-full items-center justify-between rounded-md border px-3 py-2 text-xs transition-colors ${
+                                    selected
+                                      ? 'border-primary/60 bg-primary/10 text-primary'
+                                      : 'border-border hover:border-primary/50 hover:bg-primary/5'
+                                  }`}
+                                >
+                                  <span className="flex flex-col items-start truncate pr-3">
+                                    <span className="font-semibold text-foreground text-sm">
+                                      {user.username}
+                                    </span>
+                                    <span className="text-[11px] text-muted-foreground">
+                                      {user.email}
+                                    </span>
+                                  </span>
+                                  <span className="text-[11px] font-semibold uppercase">
+                                    {selected ? 'Remover' : 'Adicionar'}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              {selectedAssigneeIds.size > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {Array.from(selectedAssigneeIds).map((id) => {
+                    const user = usersById.get(id);
+                    const label = user?.username ?? id;
+                    return (
+                      <span
+                        key={id}
+                        className="flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary"
+                      >
+                        <span>{label}</span>
+                        <button
+                          type="button"
+                          className="rounded-full border border-primary/50 px-2 py-0.5 text-[10px] uppercase tracking-wide hover:bg-primary/20"
+                          onClick={() => toggleAssignee(id)}
+                        >
+                          Remover
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="text-xs text-foreground/60 mt-1">
+                Selecionado(s): {selectedAssigneeIds.size}
+              </p>
             </div>
             <div className="md:col-span-2 flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
@@ -208,7 +410,7 @@ export const TasksListPage: React.FC = () => {
                 Vencimento
               </th>
               <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
-                Assignees
+                Responsáveis
               </th>
               <th className="px-4 py-3"></th>
             </tr>

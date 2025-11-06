@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams, useRouter } from '@tanstack/react-router';
-import { deleteTask, getTask, updateTask } from '../features/tasks/tasks.api';
+import { getTask, updateTask } from '../features/tasks/tasks.api';
 import type { UpdateTaskInput } from '../features/tasks/types';
 import { Skeleton } from '../components/Skeleton';
 import { Button } from '../components/ui/button';
@@ -15,6 +15,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '../components/ui/toast';
 import { CommentsSection } from '../components/CommentsSection';
 import { HistorySection } from '../components/HistorySection';
+import { listUsers, type UserSummary } from '../features/users/users.api';
+import { useAuthStore } from '../features/auth/store';
 
 const editTaskSchema = z.object({
   title: z.string().min(1).max(255),
@@ -42,10 +44,23 @@ export const TaskDetailsPage: React.FC = () => {
   });
 
   const {
+    data: usersData,
+    isLoading: isLoadingUsers,
+    isError: isErrorUsers,
+  } = useQuery({
+    queryKey: ['users'],
+    queryFn: listUsers,
+    staleTime: 60_000,
+  });
+
+  const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     reset,
+    setValue,
+    watch,
+    getValues,
   } = useForm<EditTaskForm>({
     resolver: zodResolver(editTaskSchema),
     values: useMemo<EditTaskForm | undefined>(() => {
@@ -60,6 +75,84 @@ export const TaskDetailsPage: React.FC = () => {
       };
     }, [task]),
   });
+
+  const currentUserId = useAuthStore((state) => state.user?.id ?? null);
+  const assigneeInputValue = watch('assigneeIds') ?? '';
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
+  const assigneeBlurTimeout = useRef<number | null>(null);
+
+  const availableUsers: UserSummary[] = useMemo(() => {
+    if (!usersData) return [];
+    return usersData.filter((user) => (currentUserId ? user.id !== currentUserId : true));
+  }, [usersData, currentUserId]);
+
+  const usersById = useMemo(() => {
+    const map = new Map<string, UserSummary>();
+    for (const user of usersData ?? []) {
+      map.set(user.id, user);
+    }
+    return map;
+  }, [usersData]);
+
+  const selectedAssigneeIds = useMemo(() => {
+    return new Set(
+      assigneeInputValue
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+  }, [assigneeInputValue]);
+
+  const toggleAssignee = (userId: string) => {
+    const next = new Set(selectedAssigneeIds);
+    if (next.has(userId)) {
+      next.delete(userId);
+    } else {
+      next.add(userId);
+    }
+    const value = Array.from(next).join(', ');
+    setValue('assigneeIds', value, { shouldDirty: true, shouldTouch: true, shouldValidate: false });
+  };
+
+  const handleAssigneeFocus = () => {
+    if (assigneeBlurTimeout.current) {
+      window.clearTimeout(assigneeBlurTimeout.current);
+      assigneeBlurTimeout.current = null;
+    }
+  };
+
+  const toggleAssigneeDropdown = () => {
+    if (assigneeBlurTimeout.current) {
+      window.clearTimeout(assigneeBlurTimeout.current);
+      assigneeBlurTimeout.current = null;
+    }
+    setAssigneeDropdownOpen((v) => !v);
+  };
+
+  const handleAssigneeBlur = () => {
+    if (assigneeBlurTimeout.current) {
+      window.clearTimeout(assigneeBlurTimeout.current);
+    }
+    assigneeBlurTimeout.current = window.setTimeout(() => {
+      setAssigneeDropdownOpen(false);
+      assigneeBlurTimeout.current = null;
+    }, 120);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (assigneeBlurTimeout.current) {
+        window.clearTimeout(assigneeBlurTimeout.current);
+      }
+    };
+  }, []);
+
+  const assigneeField = register('assigneeIds');
+  const assigneeDisplay = useMemo(() => {
+    return Array.from(selectedAssigneeIds)
+      .map((id) => usersById.get(id)?.username ?? id)
+      .join(', ');
+  }, [selectedAssigneeIds, usersById]);
 
   const saveMutation = useMutation({
     mutationFn: (values: EditTaskForm) => {
@@ -80,6 +173,8 @@ export const TaskDetailsPage: React.FC = () => {
     },
     onSuccess: async () => {
       show('Tarefa atualizada!', { type: 'success' });
+      // Define os valores atuais como baseline para limpar o estado "dirty"
+      reset(getValues());
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['task', id] }),
         queryClient.invalidateQueries({ queryKey: ['tasks'] }),
@@ -91,18 +186,7 @@ export const TaskDetailsPage: React.FC = () => {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteTask(id),
-    onSuccess: async () => {
-      show('Tarefa excluída', { type: 'success' });
-      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      router.navigate({ to: '/tasks' });
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? 'Falha ao excluir';
-      show(String(msg), { type: 'error' });
-    },
-  });
+  // Botão de excluir removido conforme solicitação
 
   if (isLoading) {
     return (
@@ -129,6 +213,8 @@ export const TaskDetailsPage: React.FC = () => {
     );
   }
 
+  // Ação de voltar substitui o botão de exclusão
+
   return (
     <div className="space-y-8 p-4">
       <div className="flex items-center justify-between">
@@ -139,21 +225,8 @@ export const TaskDetailsPage: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              reset();
-              show('Campos resetados', { type: 'info' });
-            }}
-          >
-            Resetar
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
+          <Button variant="outline" onClick={() => router.navigate({ to: '/tasks' })}>
+            Voltar
           </Button>
         </div>
       </div>
@@ -198,14 +271,126 @@ export const TaskDetailsPage: React.FC = () => {
             </Select>
           </div>
           <div className="md:col-span-2">
-            <Label>Assignees (IDs separados por vírgula)</Label>
-            <Input {...register('assigneeIds')} />
+            <Label htmlFor="edit-assignee-ids">Atribuir tarefa</Label>
+            <div className="relative">
+              <input type="hidden" {...assigneeField} />
+              <Input
+                id="edit-assignee-ids"
+                placeholder="Selecione usuários"
+                value={assigneeDisplay}
+                readOnly
+                onFocus={() => {
+                  handleAssigneeFocus();
+                }}
+                onClick={() => {
+                  toggleAssigneeDropdown();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setAssigneeDropdownOpen(true);
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setAssigneeDropdownOpen(false);
+                  }
+                }}
+                onBlur={() => {
+                  handleAssigneeBlur();
+                }}
+              />
+              {assigneeDropdownOpen && (
+                <div className="absolute z-20 mt-2 w-full max-h-60 overflow-y-auto rounded-lg border-2 border-border bg-gaming-light/95 p-3 shadow-xl">
+                  {isLoadingUsers && (
+                    <p className="text-xs text-muted-foreground">Carregando usuários...</p>
+                  )}
+                  {isErrorUsers && !isLoadingUsers && (
+                    <p className="text-xs text-red-400">
+                      Não foi possível carregar os usuários. Tente novamente mais tarde.
+                    </p>
+                  )}
+                  {!isLoadingUsers && !isErrorUsers && availableUsers.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhum outro usuário encontrado para atribuição.
+                    </p>
+                  )}
+                  {!isLoadingUsers && !isErrorUsers && availableUsers.length > 0 && (
+                    <>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Clique para adicionar ou remover participantes.
+                      </p>
+                      <ul className="space-y-1">
+                        {availableUsers.map((user) => {
+                          const selected = selectedAssigneeIds.has(user.id);
+                          return (
+                            <li key={user.id}>
+                              <button
+                                type="button"
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  toggleAssignee(user.id);
+                                }}
+                                className={`flex w-full items-center justify-between rounded-md border px-3 py-2 text-xs transition-colors ${
+                                  selected
+                                    ? 'border-primary/60 bg-primary/10 text-primary'
+                                    : 'border-border hover:border-primary/50 hover:bg-primary/5'
+                                }`}
+                              >
+                                <span className="flex flex-col items-start truncate pr-3">
+                                  <span className="font-semibold text-foreground text-sm">
+                                    {user.username}
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {user.email}
+                                  </span>
+                                </span>
+                                <span className="text-[11px] font-semibold uppercase">
+                                  {selected ? 'Remover' : 'Adicionar'}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            {selectedAssigneeIds.size > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {Array.from(selectedAssigneeIds).map((assigneeId) => {
+                  const user = usersById.get(assigneeId);
+                  const label = user?.username ?? assigneeId;
+                  return (
+                    <span
+                      key={assigneeId}
+                      className="flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary"
+                    >
+                      <span>{label}</span>
+                      <button
+                        type="button"
+                        className="rounded-full border border-primary/50 px-2 py-0.5 text-[10px] uppercase tracking-wide hover:bg-primary/20"
+                        onClick={() => toggleAssignee(assigneeId)}
+                      >
+                        Remover
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
             <p className="text-xs text-foreground/60 mt-1">
-              Atual: {task.assigneeIds.length} atribuído(s).
+              Selecionado(s): {selectedAssigneeIds.size}
             </p>
           </div>
           <div className="md:col-span-2 flex justify-end gap-3">
-            <Button type="submit" disabled={saveMutation.isPending} variant="secondary">
+            <Button
+              type="submit"
+              disabled={saveMutation.isPending || !isDirty}
+              variant="secondary"
+              size="lg"
+            >
               {saveMutation.isPending ? 'Salvando...' : 'Salvar alterações'}
             </Button>
           </div>

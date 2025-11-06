@@ -4,13 +4,20 @@ import { listHistory } from '../features/tasks/tasks.api';
 import type { UUID, TaskHistory } from '../features/tasks/types';
 import { Skeleton } from './Skeleton';
 import { Link } from '@tanstack/react-router';
+import { listUsers, type UserSummary } from '../features/users/users.api';
 
 type Props = {
   taskId: UUID;
 };
 
-function formatEvent(e: TaskHistory): { title: string; details?: string } {
-  const actor = e.actorId ? `por ${e.actorId.slice(0, 8)}` : 'por —';
+function formatEvent(
+  e: TaskHistory,
+  usersById: Map<string, UserSummary>,
+): { title: string; details?: string } {
+  const actorLabel = e.actorId
+    ? (usersById.get(e.actorId)?.username ?? e.actorId.slice(0, 8))
+    : '—';
+  const actor = `por ${actorLabel}`;
   if (e.type === 'TASK_CREATED') {
     return { title: `Tarefa criada ${actor}` };
   }
@@ -37,6 +44,18 @@ export const HistorySection: React.FC<Props> = ({ taskId }) => {
     queryFn: () => listHistory(taskId, { page, size }),
   });
 
+  const { data: usersData } = useQuery({
+    queryKey: ['users'],
+    queryFn: listUsers,
+    staleTime: 60_000,
+  });
+
+  const usersById = React.useMemo(() => {
+    const m = new Map<string, UserSummary>();
+    for (const u of usersData ?? []) m.set(u.id, u);
+    return m;
+  }, [usersData]);
+
   return (
     <div className="space-y-4">
       <h3 className="font-gaming font-bold text-xl text-primary">Histórico de alterações</h3>
@@ -56,7 +75,7 @@ export const HistorySection: React.FC<Props> = ({ taskId }) => {
         ) : (
           <ul>
             {data.data.map((h) => {
-              const { title, details } = formatEvent(h);
+              const { title, details } = formatEvent(h, usersById);
               return (
                 <li key={h.id} className="p-4 hover:bg-gaming-light/30 transition-colors">
                   <div className="flex items-start justify-between gap-4">
