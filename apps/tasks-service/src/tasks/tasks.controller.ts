@@ -44,6 +44,14 @@ export class TasksController {
     return this.tasksService.getById(id);
   }
 
+  @Get(':id/history')
+  listHistory(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Query() query: ListCommentsQueryDto,
+  ) {
+    return this.tasksService.listHistory(id, query);
+  }
+
   @Post()
   create(@Body() dto: CreateTaskDto, @Headers('x-user-id') userId?: string) {
     return this.tasksService.create(dto, userId);

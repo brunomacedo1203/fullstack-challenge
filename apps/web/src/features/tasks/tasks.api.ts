@@ -7,6 +7,7 @@ import type {
   Comment,
   CreateCommentInput,
   UUID,
+  TaskHistory,
 } from './types';
 
 export async function listTasks(
@@ -73,4 +74,15 @@ export async function listComments(
 export async function createComment(taskId: UUID, input: CreateCommentInput): Promise<Comment> {
   const { data } = await api.post<Comment>(`/tasks/${taskId}/comments`, input);
   return { ...data, createdAt: new Date(data.createdAt).toISOString() };
+}
+
+export async function listHistory(
+  taskId: UUID,
+  params: { page?: number; size?: number } = {},
+): Promise<Paginated<TaskHistory>> {
+  const { data } = await api.get<Paginated<TaskHistory>>(`/tasks/${taskId}/history`, { params });
+  return {
+    ...data,
+    data: data.data.map((h) => ({ ...h, createdAt: new Date(h.createdAt).toISOString() })),
+  };
 }

@@ -69,7 +69,7 @@ api.interceptors.response.use(
       originalRequest.headers = originalRequest.headers ?? {};
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return api.request(originalRequest);
-    } catch (e) {
+    } catch {
       useAuthStore.getState().logout();
       throw error;
     }
