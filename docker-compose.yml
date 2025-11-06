@@ -39,8 +39,10 @@ services:
     env_file:
       - ./apps/auth-service/.env
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - challenge-network
 
@@ -53,8 +55,10 @@ services:
     env_file:
       - ./apps/tasks-service/.env
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - challenge-network
 
@@ -66,9 +70,13 @@ services:
     restart: always
     env_file:
       - ./apps/notifications-service/.env
+    ports:
+      - '3004:3004'
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - challenge-network
 
@@ -84,6 +92,11 @@ services:
       POSTGRES_DB: challenge_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - challenge-network
 
@@ -99,6 +112,11 @@ services:
       RABBITMQ_DEFAULT_PASS: admin
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmqctl status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - challenge-network
 
