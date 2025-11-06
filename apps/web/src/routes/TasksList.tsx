@@ -3,18 +3,14 @@ import { useQuery, useQueryClient, useMutation, keepPreviousData } from '@tansta
 import { listTasks, createTask } from '../features/tasks/tasks.api';
 import type { Task, CreateTaskInput } from '../features/tasks/types';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Select } from '../components/ui/select';
-import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
 import { Skeleton } from '../components/Skeleton';
 import { Link } from '@tanstack/react-router';
 import TasksFilters from '../components/tasks/TasksFilters';
 import CreateTaskForm from '../components/tasks/CreateTaskForm';
 import { useToast } from '../components/ui/toast';
 import { useAuthStore } from '../features/auth/store';
-import { listUsers } from '../features/users/users.api';
-import AssigneesPicker from '../components/AssigneesPicker';
+import { listUsers, type UserSummary } from '../features/users/users.api';
+import { statusToPt, priorityToPt } from '../features/tasks/utils';
 
 export const TasksListPage: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -57,6 +53,12 @@ export const TasksListPage: React.FC = () => {
     if (priorityFilter) list = list.filter((t) => t.priority === priorityFilter);
     return list;
   }, [tasks, search, statusFilter, priorityFilter]);
+
+  const usersById = useMemo(() => {
+    const m = new Map<string, UserSummary>();
+    for (const u of usersData ?? []) m.set(u.id, u);
+    return m;
+  }, [usersData]);
 
   const createMutation = useMutation({
     mutationFn: (input: CreateTaskInput) => createTask(input),
@@ -108,8 +110,9 @@ export const TasksListPage: React.FC = () => {
         <table className="min-w-full divide-y divide-border">
           <thead className="bg-gaming-light/80">
             <tr>
+              {/* MUDANÇA: "Título" virou "Tarefa" */}
               <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
-                Título
+                Tarefa
               </th>
               <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Status
@@ -123,6 +126,8 @@ export const TasksListPage: React.FC = () => {
               <th className="px-4 py-3 text-center text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Responsáveis
               </th>
+              {/* REMOVIDO: Coluna "Atribuída por" */}
+              {/* REMOVIDO: Coluna extra sem título */}
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -152,50 +157,127 @@ export const TasksListPage: React.FC = () => {
               ))
             ) : isError ? (
               <tr>
+                {/* MUDANÇA: colSpan de 7 para 6 */}
                 <td className="px-4 py-6 text-sm text-red-400 font-medium" colSpan={6}>
                   Erro ao carregar tarefas.
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
+                {/* MUDANÇA: colSpan de 7 para 6 */}
                 <td className="px-4 py-6 text-sm text-foreground/70" colSpan={6}>
                   Nenhuma tarefa encontrada.
                 </td>
               </tr>
             ) : (
-              filtered.map((t) => (
-                <tr key={t.id} className="hover:bg-gaming-light/50 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link
-                      to="/tasks/$id"
-                      params={{ id: t.id }}
-                      className="font-semibold text-primary hover:text-accent transition-colors"
-                    >
-                      {t.title}
-                    </Link>
-                    {t.description && (
-                      <div className="text-xs text-foreground/60 line-clamp-1 mt-1">
-                        {t.description}
+              filtered.map((t) => {
+                // NOVO: Verificar se é atribuída ao usuário atual
+                const isAssignedToMe = t.assigneeIds.includes(currentUserId || '');
+
+                // NOVO: Mapear IDs para nomes
+                const assigneeNames = t.assigneeIds
+                  .map((id) => usersById.get(id)?.username || id.slice(0, 8))
+                  .filter(Boolean);
+
+                return (
+                  <tr key={t.id} className="hover:bg-gaming-light/50 transition-colors">
+                    {/* MUDANÇA PRINCIPAL: Coluna expandida com subtítulo */}
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <Link
+                          to="/tasks/$id"
+                          params={{ id: t.id }}
+                          className="font-semibold text-primary hover:text-accent transition-colors"
+                        >
+                          {t.title}
+                        </Link>
+                        {t.description && (
+                          <div className="text-xs text-foreground/60 line-clamp-1">
+                            {t.description}
+                          </div>
+                        )}
+                        {/* NOVO: Subtítulo com metadados (igual ao TaskDetailsPage) */}
+                        <div className="text-xs text-foreground/50 flex items-center gap-2 flex-wrap">
+                          <span>Criada em {new Date(t.createdAt).toLocaleDateString('pt-BR')}</span>
+                          {/* Mostra quem atribuiu, destacando se foi atribuída ao usuário atual */}
+                          {isAssignedToMe && t.lastAssignedByUsername && (
+                            <>
+                              <span>•</span>
+                              <span className="text-accent">
+                                Atribuída a você por {t.lastAssignedByUsername}
+                              </span>
+                            </>
+                          )}
+                          {!isAssignedToMe && t.lastAssignedByUsername && (
+                            <>
+                              <span>•</span>
+                              <span>Atribuída por {t.lastAssignedByUsername}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-base font-medium text-foreground">{t.status}</td>
-                  <td className="px-4 py-3 text-base font-medium text-foreground">{t.priority}</td>
-                  <td className="px-4 py-3 text-base text-foreground/80">
-                    {t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-base text-foreground/80 text-center">
-                    {t.assigneeIds.length}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link to="/tasks/$id" params={{ id: t.id }}>
-                      <Button variant="outline" size="sm">
-                        Detalhes
-                      </Button>
-                    </Link>
-                  </td>
-                </tr>
-              ))
+                    </td>
+
+                    {/* Status com badge visual */}
+                    <td className="px-4 py-3">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
+                        {statusToPt(t.status)}
+                      </span>
+                    </td>
+
+                    {/* Prioridade com badge visual */}
+                    <td className="px-4 py-3">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/20 text-accent border border-accent/30">
+                        {priorityToPt(t.priority)}
+                      </span>
+                    </td>
+
+                    {/* Vencimento */}
+                    <td className="px-4 py-3 text-base text-foreground/80">
+                      {t.dueDate ? new Date(t.dueDate).toLocaleDateString('pt-BR') : '—'}
+                    </td>
+
+                    {/* NOVO: Responsáveis com chips ao invés de só número */}
+                    <td className="px-4 py-3">
+                      {assigneeNames.length === 0 ? (
+                        <span className="text-foreground/50 text-sm">Não atribuída</span>
+                      ) : (
+                        <div className="flex items-center gap-1 flex-wrap justify-center">
+                          {assigneeNames.slice(0, 2).map((name, idx) => (
+                            <span
+                              key={idx}
+                              className="bg-accent/20 text-accent text-xs font-medium px-2.5 py-1 rounded-full border border-accent/30"
+                              title={name}
+                            >
+                              {name.split(' ')[0]}
+                            </span>
+                          ))}
+                          {assigneeNames.length > 2 && (
+                            <span
+                              className="bg-primary/20 text-primary text-xs font-medium px-2 py-1 rounded-full border border-primary/30"
+                              title={assigneeNames.slice(2).join(', ')}
+                            >
+                              +{assigneeNames.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* REMOVIDO: Coluna "Atribuída por" */}
+                    {/* REMOVIDO: Coluna com AssignedToMeByCell */}
+
+                    {/* Ações */}
+                    <td className="px-4 py-3 text-right">
+                      <Link to="/tasks/$id" params={{ id: t.id }}>
+                        <Button variant="outline" size="sm">
+                          Detalhes
+                        </Button>
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

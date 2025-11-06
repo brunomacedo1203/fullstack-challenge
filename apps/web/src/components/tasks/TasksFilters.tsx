@@ -34,20 +34,20 @@ export const TasksFilters: React.FC<Props> = ({
         <Label>Status</Label>
         <Select value={status} onChange={(e) => onStatusChange(e.target.value)}>
           <option value="">Todos</option>
-          <option value="TODO">TODO</option>
-          <option value="IN_PROGRESS">IN_PROGRESS</option>
-          <option value="REVIEW">REVIEW</option>
-          <option value="DONE">DONE</option>
+          <option value="TODO">A fazer</option>
+          <option value="IN_PROGRESS">Em andamento</option>
+          <option value="REVIEW">Em revisão</option>
+          <option value="DONE">Concluída</option>
         </Select>
       </div>
       <div>
         <Label>Prioridade</Label>
         <Select value={priority} onChange={(e) => onPriorityChange(e.target.value)}>
           <option value="">Todas</option>
-          <option value="LOW">LOW</option>
-          <option value="MEDIUM">MEDIUM</option>
-          <option value="HIGH">HIGH</option>
-          <option value="URGENT">URGENT</option>
+          <option value="LOW">Baixa</option>
+          <option value="MEDIUM">Média</option>
+          <option value="HIGH">Alta</option>
+          <option value="URGENT">Urgente</option>
         </Select>
       </div>
     </div>
