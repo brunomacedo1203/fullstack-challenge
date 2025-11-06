@@ -5,13 +5,21 @@ import { useNotificationsStore } from '../features/notifications/store';
 
 function getWsBaseUrl(): string {
   const env = (import.meta as any).env?.VITE_WS_URL as string | undefined;
-  if (env) return env;
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const hostname = window.location.hostname;
+    // If env points to docker-internal hosts, rewrite to current host
+    if (
+      env &&
+      /(notifications-service|api-gateway)/.test(env) &&
+      hostname !== 'notifications-service'
+    ) {
+      return `${protocol}//${hostname}:3004`;
+    }
+    if (env) return env;
     return `${protocol}//${hostname}:3004`;
   }
-  return 'ws://localhost:3004';
+  return env ?? 'ws://localhost:3004';
 }
 
 export function useNotifications(): void {

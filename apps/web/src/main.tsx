@@ -13,15 +13,22 @@ const rootEl = document.getElementById('root')!;
 
 const queryClient = new QueryClient();
 
-const Root = () => {
-  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
+// Mount hooks that depend on providers under the providers
+function NotificationsBootstrap() {
   // Initialize WS notifications when authenticated
   useNotifications();
-  // Fallback polling to keep badge in sync if WS misses updates
-  useNotificationsPolling(30000);
+  // Optional fallback polling (disabled by default). Enable via VITE_NOTIFS_POLL_MS
+  const pollMs = Number((import.meta as any).env?.VITE_NOTIFS_POLL_MS ?? 0);
+  useNotificationsPolling(Number.isFinite(pollMs) ? pollMs : 0);
+  return null;
+}
+
+const Root = () => {
+  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
+        <NotificationsBootstrap />
         <RouterProvider router={router} context={{ isAuthenticated }} />
       </ToastProvider>
     </QueryClientProvider>

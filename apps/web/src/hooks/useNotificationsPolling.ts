@@ -2,13 +2,13 @@ import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../features/auth/store';
 import { useNotificationsStore } from '../features/notifications/store';
 
-export function useNotificationsPolling(pollMs = 30000): void {
+export function useNotificationsPolling(pollMs = 0): void {
   const accessToken = useAuthStore((s) => s.accessToken);
   const bootstrap = useNotificationsStore((s) => s.bootstrap);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || !pollMs || pollMs <= 0) return;
     // immediate sync once
     bootstrap(10).catch(() => {});
 
