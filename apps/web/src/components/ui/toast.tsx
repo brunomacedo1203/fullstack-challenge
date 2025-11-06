@@ -37,16 +37,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           <div
             key={t.id}
             className={
-              'rounded-md border px-4 py-3 shadow bg-white ' +
+              'rounded-xl border-2 px-4 py-3 shadow-xl backdrop-blur-md transition-all duration-300 ' +
               (t.type === 'success'
-                ? 'border-green-200'
+                ? 'border-primary bg-gaming-light/90 text-foreground shadow-neon-green'
                 : t.type === 'error'
-                  ? 'border-red-200'
-                  : 'border-gray-200')
+                  ? 'border-red-500/50 bg-red-500/20 text-red-400'
+                  : 'border-border bg-gaming-light/90 text-foreground')
             }
           >
-            {t.title && <div className="font-medium mb-0.5">{t.title}</div>}
-            <div className="text-sm text-gray-700">{t.message}</div>
+            {t.title && <div className="font-gaming font-bold mb-1 text-primary">{t.title}</div>}
+            <div className="text-sm font-medium">{t.message}</div>
           </div>
         ))}
       </div>

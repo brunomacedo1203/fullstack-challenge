@@ -13,26 +13,42 @@ export const Header: React.FC<HeaderProps> = ({ isAuthenticated }) => {
   // unread count handled by NotificationsDropdown store
 
   return (
-    <header className="border-b bg-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-        <Link to="/" className="font-semibold">
+    <header className="border-b border-border bg-gaming-dark/80 backdrop-blur-md supports-[backdrop-filter]:bg-gaming-dark/60 sticky top-0 z-50 shadow-lg">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <Link
+          to="/"
+          className="font-gaming font-bold text-xl text-primary hover:text-accent transition-colors duration-300 text-glow"
+        >
           Jungle Tasks
         </Link>
-        <nav className="flex items-center gap-3">
-          <Link to="/tasks" className="text-sm underline">
+        <nav className="flex items-center gap-4">
+          <Link
+            to="/tasks"
+            className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-300"
+          >
             Tarefas
           </Link>
           {isAuthenticated && <NotificationsDropdown />}
           {!isAuthenticated ? (
             <>
-              <Link to="/login">Login</Link>
-              <Link to="/register">Registrar</Link>
+              <Link
+                to="/login"
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-300"
+              >
+                Login
+              </Link>
+              <Link to="/register">
+                <Button variant="secondary" size="sm">
+                  Registrar
+                </Button>
+              </Link>
             </>
           ) : (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">{user?.username}</span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-foreground">{user?.username}</span>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => {
                   logout();
                   navigate({ to: '/login', replace: true });

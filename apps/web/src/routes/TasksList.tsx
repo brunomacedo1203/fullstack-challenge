@@ -94,17 +94,17 @@ export const TasksListPage: React.FC = () => {
   } = useForm<CreateTaskForm>({ resolver: zodResolver(createTaskSchema) });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Tarefas</h1>
-        <Button onClick={() => setShowCreate((v) => !v)}>
+        <h1 className="text-3xl font-gaming font-bold text-primary">Tarefas</h1>
+        <Button onClick={() => setShowCreate((v) => !v)} variant="secondary">
           {showCreate ? 'Fechar' : 'Nova Tarefa'}
         </Button>
       </div>
 
       {showCreate && (
-        <div className="rounded-md border p-4">
-          <h2 className="font-medium mb-3">Criar nova tarefa</h2>
+        <div className="rounded-xl border-2 border-border bg-gaming-light/50 backdrop-blur-sm p-6 shadow-xl">
+          <h2 className="font-gaming font-bold text-xl text-primary mb-4">Criar nova tarefa</h2>
           <form
             onSubmit={handleSubmit((values) => createMutation.mutate(values))}
             className="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -112,7 +112,9 @@ export const TasksListPage: React.FC = () => {
             <div className="md:col-span-2">
               <Label htmlFor="title">Título</Label>
               <Input id="title" {...register('title')} />
-              {errors.title && <p className="text-sm text-red-600">{errors.title.message}</p>}
+              {errors.title && (
+                <p className="text-sm text-red-400 mt-1 font-medium">{errors.title.message}</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <Label htmlFor="description">Descrição</Label>
@@ -189,29 +191,29 @@ export const TasksListPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-md border">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto rounded-xl border-2 border-border bg-gaming-light/30 backdrop-blur-sm shadow-xl">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-gaming-light/80">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Título
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Status
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Prioridade
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Vencimento
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Assignees
               </th>
-              <th className="px-4 py-2"></th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-border bg-gaming-dark/50">
             {isLoading || isFetching ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
@@ -237,33 +239,39 @@ export const TasksListPage: React.FC = () => {
               ))
             ) : isError ? (
               <tr>
-                <td className="px-4 py-6 text-sm text-red-600" colSpan={6}>
+                <td className="px-4 py-6 text-sm text-red-400 font-medium" colSpan={6}>
                   Erro ao carregar tarefas.
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td className="px-4 py-6 text-sm text-gray-600" colSpan={6}>
+                <td className="px-4 py-6 text-sm text-foreground/70" colSpan={6}>
                   Nenhuma tarefa encontrada.
                 </td>
               </tr>
             ) : (
               filtered.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50">
+                <tr key={t.id} className="hover:bg-gaming-light/50 transition-colors">
                   <td className="px-4 py-3">
-                    <Link to="/tasks/$id" params={{ id: t.id }} className="font-medium underline">
+                    <Link
+                      to="/tasks/$id"
+                      params={{ id: t.id }}
+                      className="font-semibold text-primary hover:text-accent transition-colors"
+                    >
                       {t.title}
                     </Link>
                     {t.description && (
-                      <div className="text-xs text-gray-500 line-clamp-1">{t.description}</div>
+                      <div className="text-xs text-foreground/60 line-clamp-1 mt-1">
+                        {t.description}
+                      </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm">{t.status}</td>
-                  <td className="px-4 py-3 text-sm">{t.priority}</td>
-                  <td className="px-4 py-3 text-sm">
+                  <td className="px-4 py-3 text-sm font-medium text-foreground">{t.status}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-foreground">{t.priority}</td>
+                  <td className="px-4 py-3 text-sm text-foreground/80">
                     {t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '—'}
                   </td>
-                  <td className="px-4 py-3 text-sm">{t.assigneeIds.length}</td>
+                  <td className="px-4 py-3 text-sm text-foreground/80">{t.assigneeIds.length}</td>
                   <td className="px-4 py-3 text-right">
                     <Link to="/tasks/$id" params={{ id: t.id }}>
                       <Button variant="outline" size="sm">
@@ -279,7 +287,7 @@ export const TasksListPage: React.FC = () => {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-foreground/70 font-medium">
           Página {(data as any)?.page ?? page} de{' '}
           {data
             ? Math.max(1, Math.ceil(((data as any).total ?? 0) / ((data as any).size ?? 10)))
