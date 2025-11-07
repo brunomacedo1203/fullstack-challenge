@@ -78,6 +78,7 @@ export const useHomeViewModel = () => {
       (acc, t) => {
         if (t.status === 'TODO') acc.todo += 1;
         if (t.status === 'IN_PROGRESS') acc.inProgress += 1;
+        if (t.status === 'REVIEW') acc.review += 1;
         if (t.status === 'DONE') acc.done += 1;
 
         if (t.assigneeIds.includes(currentUserId || '')) {
@@ -87,7 +88,7 @@ export const useHomeViewModel = () => {
 
         return acc;
       },
-      { todo: 0, inProgress: 0, done: 0, myTodo: 0, myInProgress: 0 },
+      { todo: 0, inProgress: 0, review: 0, done: 0, myTodo: 0, myInProgress: 0 },
     );
   }, [data, user?.id]);
 

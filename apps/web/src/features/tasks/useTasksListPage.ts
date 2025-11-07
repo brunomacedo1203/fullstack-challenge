@@ -1,18 +1,27 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { listTasks } from './tasks.api';
 import { listUsers, type UserSummary } from '../users/users.api';
 import type { Task } from './types';
 import { useAuthStore } from '../auth/store';
 import { useCreateTaskMutation } from './useCreateTaskMutation';
+import { useSearch } from '@tanstack/react-router';
 
 export function useTasksListPage() {
+  const searchParams = useSearch({ from: '/tasks' }) as { status?: Task['status'] };
+  const normalizeStatus = (status?: Task['status']) =>
+    status && ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'].includes(status) ? status : '';
   const [page, setPage] = useState(1);
   const [size] = useState(10);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>(normalizeStatus(searchParams.status));
   const [priorityFilter, setPriorityFilter] = useState<string>('');
   const [showCreate, setShowCreate] = useState(false);
+
+  useEffect(() => {
+    const status = normalizeStatus(searchParams.status);
+    setStatusFilter(status);
+  }, [searchParams.status]);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['tasks', { page, size }],

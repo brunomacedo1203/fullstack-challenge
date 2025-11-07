@@ -14,6 +14,8 @@ import { useHomeViewModel } from '../features/home/useHomeViewModel';
 
 export const HomePage: React.FC = () => {
   const { user, usersById, subtitle, counters, urgentTasks, recentActivity } = useHomeViewModel();
+  const shouldScrollRecent = recentActivity.length > 4;
+  const shouldScrollUrgent = urgentTasks.length > 4;
 
   return (
     <div className="min-h-[calc(100vh-4rem)] py-8 px-4 max-w-7xl mx-auto">
@@ -26,7 +28,7 @@ export const HomePage: React.FC = () => {
       </div>
 
       {/* Status Cards Clicáveis */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Link
           to="/tasks"
           search={{ status: 'TODO' }}
@@ -71,6 +73,20 @@ export const HomePage: React.FC = () => {
 
         <Link
           to="/tasks"
+          search={{ status: 'REVIEW' }}
+          className="rounded-xl border-2 border-border bg-gaming-light/40 p-6 hover:bg-gaming-light/60 hover:border-fuchsia-500/50 transition-all group"
+        >
+          <div className="flex items-center gap-2 text-foreground/80 text-sm font-medium mb-2">
+            <span className="inline-flex h-2 w-2 rounded-full bg-fuchsia-500" /> EM REVISÃO
+          </div>
+          <div className="text-3xl font-bold text-foreground group-hover:text-fuchsia-400 transition-colors">
+            {counters.review}
+          </div>
+          <p className="text-xs text-foreground/50 mt-2">Clique para filtrar</p>
+        </Link>
+
+        <Link
+          to="/tasks"
           search={{ status: 'DONE' }}
           className="rounded-xl border-2 border-border bg-gaming-light/40 p-6 hover:bg-gaming-light/60 hover:border-secondary/50 transition-all group"
         >
@@ -86,7 +102,7 @@ export const HomePage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Atividade Recente */}
-        <div className="rounded-xl border-2 border-border bg-gaming-light/40 p-6">
+        <div className="rounded-xl border-2 border-border bg-gaming-light/40 p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-gaming font-bold text-foreground">Atividade Recente</h2>
@@ -96,10 +112,8 @@ export const HomePage: React.FC = () => {
           </p>
           {recentActivity.length > 0 ? (
             <div
-              className={`space-y-3 ${
-                recentActivity.length > 3
-                  ? 'max-h-56 overflow-y-auto pr-1 -mr-1 thin-scrollbar'
-                  : ''
+              className={`space-y-3 flex-1 ${
+                shouldScrollRecent ? 'overflow-y-auto pr-1 thin-scrollbar max-h-[28rem]' : ''
               }`}
             >
               {recentActivity.map((activity, idx) => {
@@ -152,7 +166,7 @@ export const HomePage: React.FC = () => {
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-foreground/50">
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-8 text-foreground/50">
               <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-30" />
               <p className="text-sm">Nenhuma atividade recente</p>
             </div>
@@ -160,7 +174,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/*Tarefas Urgentes com Responsáveis */}
-        <div className="rounded-xl border-2 border-border bg-gaming-light/40 p-6">
+        <div className="rounded-xl border-2 border-border bg-gaming-light/40 p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle className="w-5 h-5 text-orange-500" />
             <h2 className="text-xl font-gaming font-bold text-foreground">Requer Atenção</h2>
@@ -177,8 +191,8 @@ export const HomePage: React.FC = () => {
           {urgentTasks.length > 0 ? (
             <>
               <div
-                className={`space-y-3 ${
-                  urgentTasks.length > 3 ? 'max-h-72 overflow-y-auto pr-1 -mr-1 thin-scrollbar' : ''
+                className={`space-y-3 flex-1 ${
+                  shouldScrollUrgent ? 'overflow-y-auto pr-1 thin-scrollbar max-h-[32rem]' : ''
                 }`}
               >
                 {urgentTasks.map((task) => {
@@ -321,7 +335,7 @@ export const HomePage: React.FC = () => {
               </div>
             </>
           ) : (
-            <div className="text-center py-8 text-foreground/50">
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-8 text-foreground/50">
               <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-30" />
               <p className="text-sm">Nenhuma tarefa urgente</p>
               <p className="text-xs mt-1">Continue assim! 🎉</p>
