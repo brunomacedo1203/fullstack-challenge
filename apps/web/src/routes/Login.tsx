@@ -1,40 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
+import React from 'react';
+import { Link } from '@tanstack/react-router';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { login } from '../features/auth/auth.api';
-import { useAuthStore } from '../features/auth/store';
+import { useLoginPage } from '../features/auth/useLoginPage';
 
 export const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
-  const setTokens = useAuthStore((s) => s.setTokens);
-  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const tokens = await login({ email, password });
-      setTokens(tokens.accessToken, tokens.refreshToken);
-      navigate({ to: '/', replace: true });
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Falha ao autenticar');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate({ to: '/', replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  const { email, setEmail, password, setPassword, loading, error, handleSubmit } = useLoginPage();
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">

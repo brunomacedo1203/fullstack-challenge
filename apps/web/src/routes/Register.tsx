@@ -1,41 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
+import React from 'react';
+import { Link } from '@tanstack/react-router';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { register } from '../features/auth/auth.api';
-import { useAuthStore } from '../features/auth/store';
+import { useRegisterPage } from '../features/auth/useRegisterPage';
 
 export const RegisterPage: React.FC = () => {
-  const navigate = useNavigate();
-  const setTokens = useAuthStore((s) => s.setTokens);
-  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const tokens = await register({ email, username, password });
-      setTokens(tokens.accessToken, tokens.refreshToken);
-      navigate({ to: '/', replace: true });
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Falha ao registrar');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate({ to: '/', replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  const {
+    email,
+    setEmail,
+    username,
+    setUsername,
+    password,
+    setPassword,
+    loading,
+    error,
+    handleSubmit,
+  } = useRegisterPage();
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
