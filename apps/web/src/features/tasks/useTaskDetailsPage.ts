@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, useRouter, useRouterState } from '@tanstack/react-router';
+import { useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { useTaskDetailsViewModel } from './useTaskDetailsViewModel';
 import { useEditTaskForm } from './forms/useEditTaskForm';
 import { useUpdateTaskMutation } from './useUpdateTaskMutation';
@@ -9,7 +9,7 @@ import type { EditTaskForm } from './forms/editTaskForm';
 export function useTaskDetailsPage() {
   const { id } = useParams({ from: '/tasks/$id' });
   const router = useRouter();
-  const routerState = useRouterState();
+  const search = useSearch({ from: '/tasks/$id' }) as { from?: 'home' | 'tasks' };
 
   const vm = useTaskDetailsViewModel(id);
   const form = useEditTaskForm(vm.task);
@@ -27,7 +27,7 @@ export function useTaskDetailsPage() {
       setConfirmLeaveOpen(true);
       return;
     }
-    const from = (routerState.location.state as any)?.from as 'home' | 'tasks' | undefined;
+    const from = search?.from;
     if (from === 'tasks') {
       router.navigate({ to: '/tasks' });
       return;

@@ -254,7 +254,7 @@ export const HomePage: React.FC = () => {
                       key={task.id}
                       to="/tasks/$id"
                       params={{ id: task.id }}
-                      state={{ from: 'home' }}
+                      search={{ from: 'home' }}
                       className={cardClasses}
                     >
                       <div className="flex items-start gap-3">

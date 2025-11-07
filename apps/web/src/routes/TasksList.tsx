@@ -135,7 +135,7 @@ export const TasksListPage: React.FC = () => {
                         <Link
                           to="/tasks/$id"
                           params={{ id: t.id }}
-                          state={{ from: 'tasks' }}
+                          search={{ from: 'tasks' }}
                           className="font-semibold text-primary hover:text-accent transition-colors"
                         >
                           {t.title}
@@ -208,7 +208,7 @@ export const TasksListPage: React.FC = () => {
                     </td>
 
                     <td className="px-4 py-3 text-right">
-                      <Link to="/tasks/$id" params={{ id: t.id }} state={{ from: 'tasks' }}>
+                      <Link to="/tasks/$id" params={{ id: t.id }} search={{ from: 'tasks' }}>
                         <Button variant="outline" size="sm">
                           Detalhes
                         </Button>
