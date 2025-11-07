@@ -11,7 +11,6 @@ export const TasksListPage: React.FC = () => {
   const {
     page,
     setPage,
-    size,
     search,
     setSearch,
     statusFilter,
@@ -27,8 +26,6 @@ export const TasksListPage: React.FC = () => {
     filtered,
     usersById,
     usersData,
-    isLoadingUsers,
-    isErrorUsers,
     createMutation,
     handleCreate,
     currentUserId,

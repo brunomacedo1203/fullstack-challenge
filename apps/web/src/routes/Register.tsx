@@ -4,19 +4,17 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { useRegisterPage } from '../features/auth/useRegisterPage';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerFormSchema, type RegisterFormValues } from '../features/auth/forms/registerForm';
 
 export const RegisterPage: React.FC = () => {
+  const { loading, error, submit } = useRegisterPage();
   const {
-    email,
-    setEmail,
-    username,
-    setUsername,
-    password,
-    setPassword,
-    loading,
-    error,
+    register: formRegister,
     handleSubmit,
-  } = useRegisterPage();
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({ resolver: zodResolver(registerFormSchema) });
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
@@ -26,41 +24,43 @@ export const RegisterPage: React.FC = () => {
             Criar conta
           </h1>
           <p className="text-foreground/70 text-sm text-center mb-8">Junte-se ao Jungle Tasks</p>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(submit)} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                required
+                {...formRegister('email')}
               />
+              {errors.email && (
+                <p className="text-sm text-red-400 mt-1 font-medium">
+                  {errors.email.message as string}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="seu_usuario"
-                required
-                minLength={3}
-                pattern="^[a-zA-Z0-9_\-]+$"
-              />
+              <Input id="username" placeholder="seu_usuario" {...formRegister('username')} />
+              {errors.username && (
+                <p className="text-sm text-red-400 mt-1 font-medium">
+                  {errors.username.message as string}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                required
-                minLength={6}
+                {...formRegister('password')}
               />
+              {errors.password && (
+                <p className="text-sm text-red-400 mt-1 font-medium">
+                  {errors.password.message as string}
+                </p>
+              )}
             </div>
             {error && (
               <div className="bg-red-500/20 border-2 border-red-500/50 rounded-lg p-3">
@@ -69,12 +69,12 @@ export const RegisterPage: React.FC = () => {
             )}
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || isSubmitting}
               className="w-full"
               size="lg"
               variant="secondary"
             >
-              {loading ? 'Criando...' : 'Registrar'}
+              {loading || isSubmitting ? 'Criando...' : 'Registrar'}
             </Button>
             <p className="text-sm text-foreground/70 text-center">
               Já tem conta?{' '}
