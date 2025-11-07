@@ -11,10 +11,15 @@ import AssigneesPicker from './AssigneesPicker';
 import type { UserSummary } from '../../features/users/users.api';
 import type { CreateTaskInput } from '../../features/tasks/types';
 
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/; // YYYY-MM-DD
 const schema = z.object({
   title: z.string().min(1, 'Título é obrigatório').max(255),
   description: z.string().optional(),
-  dueDate: z.string().optional(),
+  dueDate: z
+    .string()
+    .regex(dateRegex, 'Data deve estar no formato YYYY-MM-DD')
+    .optional()
+    .or(z.literal('')),
   status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE']).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
 });
@@ -72,8 +77,11 @@ export const CreateTaskForm: React.FC<Props> = ({
         <Textarea id="description" rows={3} {...register('description')} />
       </div>
       <div>
-        <Label htmlFor="dueDate">Data limite (YYYY-MM-DD)</Label>
-        <Input id="dueDate" placeholder="2025-11-20" {...register('dueDate')} />
+        <Label htmlFor="dueDate">Data limite</Label>
+        <Input id="dueDate" type="date" {...register('dueDate')} />
+        {errors.dueDate && (
+          <p className="text-sm text-red-400 mt-1 font-medium">{errors.dueDate.message}</p>
+        )}
       </div>
       <div>
         <Label>Status</Label>
