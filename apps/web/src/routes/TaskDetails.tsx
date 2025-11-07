@@ -62,7 +62,7 @@ export const TaskDetailsPage: React.FC = () => {
       <ConfirmDialog
         open={confirmLeaveOpen}
         title="Descartar alterações?"
-        description="Você tem alterações não salvas. Deseja descartá-las e voltar para a lista de tarefas?"
+        description="Você tem alterações não salvas. Deseja descartá-las e voltar à página anterior?"
         cancelText="Permanecer aqui"
         confirmText="Descartar e voltar"
         onCancel={() => setConfirmLeaveOpen(false)}

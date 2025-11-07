@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, useRouter } from '@tanstack/react-router';
+import { useParams, useRouter, useRouterState } from '@tanstack/react-router';
 import { useTaskDetailsViewModel } from './useTaskDetailsViewModel';
 import { useEditTaskForm } from './forms/useEditTaskForm';
 import { useUpdateTaskMutation } from './useUpdateTaskMutation';
@@ -9,6 +9,7 @@ import type { EditTaskForm } from './forms/editTaskForm';
 export function useTaskDetailsPage() {
   const { id } = useParams({ from: '/tasks/$id' });
   const router = useRouter();
+  const routerState = useRouterState();
 
   const vm = useTaskDetailsViewModel(id);
   const form = useEditTaskForm(vm.task);
@@ -26,7 +27,13 @@ export function useTaskDetailsPage() {
       setConfirmLeaveOpen(true);
       return;
     }
-    router.navigate({ to: '/tasks' });
+    const from = (routerState.location.state as any)?.from as 'home' | 'tasks' | undefined;
+    if (from === 'tasks') {
+      router.navigate({ to: '/tasks' });
+      return;
+    }
+    // Default: voltar para a Home quando não veio da lista
+    router.navigate({ to: '/' });
   };
 
   const onSubmit = (values: EditTaskForm) =>
