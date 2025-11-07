@@ -15,7 +15,7 @@
 
 # - O Docker faz TUDO: build, otimização e serve a aplicação
 
-     - Frontend fica em http://localhost:3000 (porta exposta pelo container)
+     -  http://localhost:3000 (porta exposta pelo container)
 
 # - Não precisa rodar npm run build/preview manualmente!
 

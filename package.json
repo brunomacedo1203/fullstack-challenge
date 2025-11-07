@@ -12,6 +12,7 @@
     "build": "turbo run build",
     "preview": "cd apps/web && npm run preview",
     "check-all": "npm run typecheck && npm run lint && npm run format:check && npm run build",
+    "diagram:build": "mmdc -i docs/architecture.mmd -o docs/images/architecture.svg",
     "prepare": "husky install"
   },
   "keywords": [],
@@ -27,6 +28,7 @@
   },
   "packageManager": "npm@10.8.2",
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^10.9.1",
     "@modelcontextprotocol/server-filesystem": "^2025.8.21",
     "@types/node": "^24.9.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",

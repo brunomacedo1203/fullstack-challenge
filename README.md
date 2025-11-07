@@ -3,59 +3,75 @@
 Este repositório contém a implementação incremental do **Desafio Full-Stack da Jungle Gaming**.  
 O objetivo é entregar um **sistema colaborativo de gestão de tarefas** composto por múltiplos serviços NestJS, um API Gateway, uma aplicação React e comunicação assíncrona via RabbitMQ.
 
-> **Status atual (Fim do Dia 6):**
->
-> - ✅ Infraestrutura Docker e Turborepo operacionais
-> - ✅ Auth Service completo (cadastro, login, refresh token, bcrypt, TypeORM/Postgres)
-> - ✅ API Gateway com proteção JWT, rate limiting, Swagger e rotas proxy para auth e tasks
-> - ✅ Tasks Service com CRUD completo de tarefas, comentários, histórico, paginação e migrations
-> - ✅ Notifications Service consumindo eventos via RabbitMQ e emitindo WebSocket em tempo real
-> - ⏳ Frontend em desenvolvimento (a partir do Dia 7)
+## 📋 Plano de Implementação
+
+Este projeto segue o plano detalhado em [Implementation-checklist.md](Implementation-checklist.md).
+O documento organiza as etapas por “Dia” e descreve as decisões e entregas realizadas.
 
 ---
 
-## 🏗️ Arquitetura
+# 🏗️ Arquitetura do Sistema
 
-```
-                       ┌──────────────┐
-                       │   Web (WIP)  │
-                       └──────┬───────┘
+<div align="center">
+  <pre style="display: inline-block; text-align: left;">
+
+       ┌────────────────────────────────────────────┐
+       │ Web (React + Vite + TanStack + Zustand)    │
+       └────────────────────────────────────────────┘
+                              │
                               │ HTTP (JWT)
                       ┌───────▼────────┐
-                      │  API Gateway   │  Swagger → http://localhost:3001/api/docs
+                      │  API Gateway   │
                       └───────▲────────┘
-                          HTTP│
+                          HTTP │
+
 ┌──────────────────────────────┼─────────────────────────────┐
-│        Serviços internos NestJS + Postgres + RabbitMQ      │
-│  ┌─────────────┐    ┌────────────────┐       ┌───────────┐ │
-│  │ Auth Service│    │ Tasks Service  │       │ Notifications │
-│  └──────┬──────┘    └───────┬────────┘       └───────┬───┘ │
-│         │ JWT & Users       │ CRUD + Assignees         │    │
-│         │                   │                          │    │
-│      ┌──▼──┐            ┌───▼───┐                 ┌────▼──┐ │
-│      │ DB  │◄───────────┤ Tables│                 │RabbitMQ│ │
-│      └─────┘            └───────┘                 └───────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
+│ Serviços internos NestJS + Postgres + RabbitMQ │
+│ ┌─────────────┐ ┌────────────────┐ ┌───────────┐ │
+│ │ Auth Service│ │ Tasks Service │ │ Notifications
+│ └──────┬──────┘ └───────┬────────┘ └───────┬───┘ │
+│ │ JWT & Users │ CRUD + Assignees │ │
+│ │ │ │ │
+│ ┌──▼──┐ ┌───▼───┐ ┌────▼──┐│
+│ │ DB │◄───────────┤ Tables│ │RabbitMQ│
+│ └─────┘ └───────┘ └───────┘│
+└────────────────────────────────────────────────────────────┘
 
----
+  </pre>
+</div>
 
-## ⚙️ Stack Técnica
+## 🔑 Componentes
 
-- **Monorepo & DevX:** Turborepo, npm workspaces, TypeScript 5, ESLint, Prettier
-- **Backend:** NestJS 11, TypeORM 0.3, PostgreSQL 17, Docker Compose
-- **Banco de Dados & Ferramentas:** PostgreSQL (via Docker) + DBeaver (inspeção visual do schema e dados)
-- **Infra complementar:** RabbitMQ 3 (management UI), Swagger/OpenAPI via Nest
-- **Frontend:** React + TanStack Router + Tailwind + shadcn/ui (a partir do Dia 7)
+**Web (React + Vite + TanStack + Zustand)** → Interface frontend com autenticação JWT
 
-### IDs e Migrations (Convenção)
+**API Gateway** → Roteamento e validação de requisições
 
-- IDs primários agora são gerados pelo banco via `@PrimaryGeneratedColumn('uuid')`.
-- As migrations habilitam `uuid-ossp` e definem `DEFAULT uuid_generate_v4()` para as colunas `id`.
-- Com isso, é seguro usar tanto `save()` quanto `insert()` nas operações do TypeORM.
-- Ver diretrizes em `CONTRIBUTING.md`.
+**Auth Service** → JWT, usuários e autenticação
 
----
+**Tasks Service** → CRUD de tarefas e gerenciamento de assignees
+
+**Notifications Service** → WebSocket e HTTP (JWT) para notificações em tempo real
+
+**PostgreSQL** → Banco relacional (users, tasks, assignees, comments, task_history, notifications, task_participants)
+
+**RabbitMQ** → Message broker para comunicação assíncrona entre serviços
+
+## 🔄 Fluxo de Comunicação
+
+1. Cliente → API Gateway (HTTP + JWT)
+2. Gateway → Services (HTTP interno)
+3. Services → PostgreSQL (persistência)
+4. Services → RabbitMQ (eventos)
+5. Notifications → Cliente (WebSocket push)
+
+## 🎯 Padrões e Stack Técnica
+
+- **Arquitetura:** Microserviços independentes, com API Gateway orquestrando HTTP + JWT.
+- **Comunicação:** REST síncrono entre serviços e fluxo event-driven pelo RabbitMQ; notificações em tempo real via WebSocket.
+- **Dev Experience:** Monorepo Turborepo + npm workspaces, TypeScript 5, ESLint e Prettier.
+- **Backend:** NestJS com TypeORM , PostgreSQL e Docker Compose.
+- **Observabilidade/Ferramentas:** Swagger/OpenAPI no Gateway, DBeaver para inspeção do banco e RabbitMQ (management UI) para mensageria.
+- **Frontend:** React + TanStack Router + Tailwind + shadcn/ui.
 
 ## 🚀 Como Rodar o Projeto
 
@@ -74,20 +90,17 @@ npm install
 
 ---
 
-### 3️⃣ Variáveis de ambiente
+### 3️⃣ Configurar variáveis (.env)
 
-Cada app possui um `.env.example`.  
-Copie-o para `.env`:
-
-```bash
-cp apps/<app>/.env.example apps/<app>/.env
-```
-
-Valores padrão (local/dev) já funcionam com o `docker-compose.yml` presente na raiz.
-
-- `apps/tasks-service/.env` expos `TASKS_EVENTS_EXCHANGE` (default `tasks.events`).
-- `apps/notifications-service/.env` define `RABBITMQ_URL`, `TASKS_EVENTS_EXCHANGE`, `NOTIFS_QUEUE`, `PORT`, `JWT_ACCESS_SECRET` e `MIGRATIONS_RUN=true` (para aplicar migrations automaticamente no boot).
-- `apps/auth-service/.env` também traz `MIGRATIONS_RUN=true`, garantindo que as migrations de UUID sejam aplicadas ao subir via Docker.
+- Copie cada `.env.example` para `.env` em:
+  - `apps/api-gateway`
+  - `apps/auth-service`
+  - `apps/tasks-service`
+  - `apps/notifications-service`
+  - `apps/web`
+- Alinhe segredos de JWT: use o mesmo `JWT_ACCESS_SECRET` no Gateway e no Notifications (HTTP/WS).
+- Ajuste `CORS_ORIGIN` conforme o host do front (ex.: `http://localhost:3000`).
+- Em Docker Compose, use os hostnames internos (`auth-service`, `tasks-service`, `notifications-service`, `api-gateway`).
 
 ---
 
@@ -103,18 +116,15 @@ docker compose up --build
 | --------------------- | ----- | ------------------------------------ |
 | Web (WIP)             | 3000  | http://localhost:3000                |
 | API Gateway           | 3001  | http://localhost:3001                |
-| Health (Gateway)      | —     | http://localhost:3001/api/health     |
 | Swagger (Gateway)     | —     | http://localhost:3001/api/docs       |
-| Auth Service          | 3002  | http://localhost:3002                |
-| Tasks Service         | 3003  | http://localhost:3003                |
-| Health (Tasks)        | —     | http://localhost:3003/health         |
+| Health (Gateway)      | —     | http://localhost:3001/api/health     |
 | Notifications Service | 3004  | http://localhost:3004                |
 | Health (Notifs)       | —     | http://localhost:3004/health         |
 | RabbitMQ UI           | 15672 | http://localhost:15672 (admin/admin) |
 
 ---
 
-Nota de segurança: os microserviços internos (Auth, Tasks e Notifications) não expõem mais portas públicas no Docker Compose. A comunicação externa deve ocorrer apenas via API Gateway. Para depuração direta, use `docker compose exec` dentro dos containers ou acesse pelos nomes de host internos da rede do Compose.
+Nota de segurança: os microserviços internos de Auth e Tasks não expõem portas públicas no Docker Compose. A comunicação externa deve ocorrer via API Gateway. Para depuração direta, use `docker compose exec` dentro dos containers ou acesse pelos nomes de host internos da rede do Compose. O Notifications Service expõe a porta 3004 para WebSocket/HTTP.
 
 ### 5️⃣ Rodar migrations
 
@@ -144,144 +154,17 @@ npm run build --workspace=@jungle/tasks-service
 
 # Health endpoints
 curl -sfS http://localhost:3001/api/health
-curl -sfS http://localhost:3003/health
+# Tasks Service (acesso interno via exec)
+docker compose exec tasks-service curl -sfS http://localhost:3003/health
+# Notifications (exposto)
 curl -sfS http://localhost:3004/health
 ```
 
 ---
 
-## 🔐 Fluxo Implementado até o Momento
+## 🧭 Jornada de Implementação (Dia a Dia)
 
-### Autenticação
-
-| Endpoint                  | Via Gateway | Descrição                     |
-| ------------------------- | ----------- | ----------------------------- |
-| `POST /api/auth/register` | ✅          | Cria usuário + retorna tokens |
-| `POST /api/auth/login`    | ✅          | Autentica e retorna tokens    |
-| `POST /api/auth/refresh`  | ✅          | Atualiza access token         |
-
-- Hash de senha com bcrypt (`BCRYPT_SALT_ROUNDS`, default 10)
-- JWT Access (15 min) e Refresh (7 dias)
-- Refresh token armazenado como hash no banco (`users.refresh_token_hash`)
-
-**Testar via Swagger:**
-
-1. Acesse http://localhost:3001/api/docs
-2. Registre um usuário
-3. Faça login e obtenha os tokens
-4. Clique em **Authorize** e insira `Bearer <accessToken>`
-5. Teste as rotas de Tasks autenticadas
-
-—
-
-### CORS e Rate-limit (Gateway)
-
-O Gateway agora aceita configuração via `.env`:
-
-- `CORS_ORIGIN`: lista separada por vírgulas de origens permitidas (ou `*`). Ex.: `http://localhost:3000,http://127.0.0.1:3000`.
-- `CORS_CREDENTIALS`: `true`/`false`.
-- `THROTTLE_TTL`: janela (segundos) para rate-limit.
-- `THROTTLE_LIMIT`: requisições por janela.
-
-Veja `apps/api-gateway/.env.example` para valores padrão.
-
-### Notificações HTTP autenticadas
-
-`GET /notifications` no notifications-service agora requer JWT e deriva o `recipientId` do token:
-
-```
-curl -H "Authorization: Bearer $ACCESS_TOKEN" "http://localhost:3004/notifications?size=10"
-```
-
-—
-
-### Front-end: WebSocket e Auto-refresh de Token
-
-- O front conecta ao WS usando `VITE_WS_URL` (ex.: `ws://localhost:3004`).
-- Ao receber 401 das APIs, o front tenta `POST /auth/refresh` via Gateway e reexecuta a requisição original.
-- Notificações em tempo real exibem toasts e um badge de "não lidas" (máx. 10) no cabeçalho.
-
----
-
-### Tasks Service (Dias 4 e 5)
-
-| Endpoint                        | Protegido | Observações                                                                                        |
-| ------------------------------- | --------- | -------------------------------------------------------------------------------------------------- |
-| `GET /api/tasks`                | ✅        | Paginação (`page`, `size`), ordenação desc por criação                                             |
-| `POST /api/tasks`               | ✅        | Valida título, status, prioridade, `assigneeIds` únicos; registra histórico e publica evento       |
-| `GET /api/tasks/{id}`           | ✅        | Usa `ParseUUIDPipe`; inclui `X-User-Id` para auditoria                                             |
-| `PUT /api/tasks/{id}`           | ✅        | Transação + diff de alterações; histórico `TASK_UPDATED`; evento `task.updated`                    |
-| `DELETE /api/tasks/{id}`        | ✅        | Remove tarefa (cascade em assignees)                                                               |
-| `GET /api/tasks/{id}/comments`  | ✅        | Lista comentários com paginação (`page`, `size`) e ordenação desc por `createdAt`                  |
-| `POST /api/tasks/{id}/comments` | ✅        | Cria comentário usando o usuário autenticado (`X-User-Id`) como autor; histórico `COMMENT_CREATED` |
-
-Regras principais e integrações:
-
-- `assigneeIds` deduplicados → duplicatas geram 400.
-- Todas as operações críticas ocorrem dentro de transações TypeORM (consistência entre `tasks`, `task_assignees`, `comments` e `task_history`).
-- `X-User-Id` é propagado pelo Gateway (valor do `sub` no JWT) e utilizado como `actorId` e `authorId` no tasks-service.
-- `task_history` registra `TASK_CREATED`, `TASK_UPDATED` (com `changedFields`) e `COMMENT_CREATED`.
-- Respostas de listagem padronizadas: `{ data, page, size, total }`.
-
-### RabbitMQ & Eventos
-
-- Exchange padrão: `tasks.events` (configurável via `TASKS_EVENTS_EXCHANGE`).
-- Eventos publicados:
-  - `task.created`
-  - `task.updated`
-  - `task.comment.created`
-- Payload inclui `actorId` quando disponível e snapshots normalizados (datas em ISO 8601 / UTC).
-- **Inspecionar rapidamente via CLI:**
-
-  ```bash
-  # criar fila efêmera e bindar todos os eventos
-  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin declare queue name=debug-tasks-events durable=false
-  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin declare binding source=tasks.events destination=debug-tasks-events routing_key='#'
-
-  # consumir mensagens
-  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin get queue=debug-tasks-events count=10
-
-  # remover fila ao terminar
-  docker compose exec rabbitmq rabbitmqadmin -u admin -p admin delete queue name=debug-tasks-events
-  ```
-
-- Notifications/WebSocket implementados no Dia 6 (ver seção abaixo para detalhes do WS e testes com wscat).
-
-### Notifications Service & WebSocket (Dia 6)
-
-- Health-check: `GET http://localhost:3004/health`
-- Consumer RabbitMQ:
-  - Fila padrão `NOTIFS_QUEUE=notifications.q` (durável) com `prefetch(10)` e ACK manual
-  - Bind no exchange `tasks.events` usando padrão `task.#` (suporta múltiplos padrões via `,`)
-  - Payloads validados com tipos de `packages/types`; mensagens inválidas recebem NACK para a DLQ (opcional)
-- Persistência:
-  - Upsert de participantes por tarefa (`task_participants`), evitando notificar o próprio autor
-  - Tabela `notifications` (`id`, `recipient_id`, `type`, `task_id`, `comment_id`, `title`, `body`, `read_at`, `created_at`)
-  - Índices em `(recipient_id, read_at)` e `(recipient_id, created_at DESC)` para listagem rápida
-- WebSocket gateway em `ws://localhost:3004/ws?token=<JWT>` (usa `JWT_ACCESS_SECRET`) com limpeza de sockets por usuário em `disconnect`
-- Eventos emitidos aos destinatários conectados:
-  - `task:created`
-  - `task:updated`
-  - `comment:new`
-- Sincronização inicial: ao conectar, o serviço envia as últimas notificações não lidas (`notification:unread`, limite padrão 10)
-- API auxiliar `GET /notifications?page=&size=` (JWT requerido) para teste/local; `size` é opcional graças ao `ParseIntPipe({ optional: true })`
-- Observabilidade: logs estruturados por `routingKey` e métricas básicas para QA; script wscat documentado para debug
-- QA: cenário validado com 2 usuários simultâneos — usuário A cria/atualiza/comenta e usuário B recebe apenas notificações pertinentes (via WS + `GET /notifications`)
-
-Exemplo rápido com wscat:
-
-```bash
-npx wscat -c "ws://localhost:3004/ws?token=$ACCESS_TOKEN"
-```
-
----
-
-# 🧩 Jungle Gaming — Full-Stack Challenge (Monorepo)
-
-Este repositório contém a implementação incremental do **Desafio Full-Stack da Jungle Gaming**.  
-O objetivo é entregar um **sistema colaborativo de gestão de tarefas** composto por múltiplos serviços NestJS, um API Gateway, uma aplicação React e comunicação assíncrona via RabbitMQ.
-
----
+As próximas seções documentam, em ordem cronológica, as decisões técnicas, entregas e evidências visuais concluídas em cada etapa do plano.
 
 ## 🗓️ DIA 1 – Setup e Infraestrutura
 
@@ -402,15 +285,6 @@ O foco principal foi consolidar o backend com migrations, relacionamentos e vali
 
 ---
 
-### 🖼️ **Figura 5 – Estrutura geral do banco (Dia 4)**
-
-Visão geral das tabelas criadas até o final do Dia 4 (`users`, `tasks`, `task_assignees`, `migrations`), exibida via DBeaver.  
-Mostra a base do schema utilizada pelos serviços posteriores.
-
-![Figura 5 – Estrutura geral do banco (Dia 4)](./docs/images/day-04/fig-05-db-overview.png)
-
----
-
 ### 🖼️ **Figura 6 – ER Diagram (Dia 4)**
 
 Diagrama Entidade-Relacionamento (ER) gerado no DBeaver, mostrando as relações entre `users`, `tasks` e `task_assignees`.  
@@ -457,21 +331,6 @@ Novas tabelas `comments` e `task_history` adicionadas ao schema do PostgreSQL (`
 Evidenciam a expansão da modelagem para suportar interações e logs de eventos.
 
 ![Figura 8 – Estrutura do banco (Dia 5)](./docs/images/day-05/fig-08-db-comments-history.png)
-
----
-
-### 🖼️ **Figura 9 – RabbitMQ (Dia 5)**
-
-Interface do RabbitMQ Management exibindo o exchange `tasks.events` e a fila `notifications.q`, que recebe eventos de criação, atualização e comentários.  
-Comprova a integração assíncrona entre os serviços `tasks` e `notifications`.
-
-![Figura 9 – RabbitMQ UI (Dia 5)](./docs/images/day-05/fig-09-rabbitmq-events.png)
-
----
-
-✅ **Resultado:**  
-O sistema passou a registrar comentários e histórico de ações, publicando eventos no RabbitMQ para consumo por outros microserviços.  
-Este marco estabeleceu a base para o **Notifications Service** e as **notificações em tempo real** implementadas no Dia 6.
 
 ---
 
@@ -581,36 +440,22 @@ CRUD visual completo de tarefas e comentários, funcionando de ponta a ponta via
 
 ## 🗓️ DIA 9 – Frontend (WebSocket + UX)
 
-Nesta etapa o frontend passou a receber **notificações em tempo real** via WebSocket, exibindo toasts e um centro de notificações visual.
+Nesta etapa o frontend passou a receber **notificações em tempo real** via **WebSocket**, exibindo toasts imediatos e um **centro de notificações sincronizado**.  
+O objetivo foi consolidar a integração entre o **Notifications Service**, o **API Gateway** e o **cliente React**, garantindo comunicação bidirecional e experiência fluida entre usuários simultâneos.
 
-### 🧩 Recursos implementados
+### 🖼️ **Figura 18 – Notificações em tempo real (Dia 9)**
 
-- Hook `useWebSocket` com reconexão e heartbeat.
-- Store Zustand `useNotificationsStore` para armazenar notificações.
-- Toasts em tempo real (`task:created`, `task:updated`, `comment:new`).
-- Dropdown de notificações e contador (“badge”) no header.
-- Sincronização automática ao reconectar.
+![Figura 18 – Notificações em tempo real](./docs/images/day-09/fig-18-notification-realtime.png)
 
----
-
-![Figura 18 – Toast em tempo real](./docs/images/day-09/fig-18-realtime-toast.png)
-
-Ao criar ou atualizar uma tarefa em outra sessão, o usuário autenticado recebe **toasts instantâneos** por meio do canal WebSocket.  
-Esse comportamento confirma o disparo dos eventos `task:created`, `task:updated` e `comment:new` consumidos pelo frontend.
-
----
-
-### 🖼️ **Figura 19 – Centro de notificações (Dia 9)**
-
-![Figura 19 – Dropdown de notificações](./docs/images/day-09/fig-19-notification-dropdown.png)
-
-O **centro de notificações** exibe o histórico das últimas interações em tempo real, com contador (“badge”) de não lidas sincronizado via Zustand.  
-Cada item traz título, resumo e horário do evento, reforçando a integração entre **Notifications Service**, **API Gateway** e **frontend React**.
+Interface exibindo o recebimento de **notificações em tempo real** via WebSocket.  
+O ícone de sino indica o **contador de novas notificações (“2”)**, enquanto o dropdown mostra os detalhes de cada evento — título, participantes e horário da criação.  
+Essa captura demonstra a sincronização imediata entre **Notifications Service**, **API Gateway** e **frontend React**, confirmando o funcionamento completo dos eventos `task:created`, `task:updated` e `comment:new`.
 
 ---
 
 ✅ **Resultado:**  
-Notificações instantâneas entre usuários, toasts e contadores sincronizados em tempo real, confirmando o funcionamento do **Notifications Service + WebSocket + Frontend**.
+Notificações instantâneas entre usuários, com **atualização dinâmica**, **persistência sincronizada** e **feedback visual em tempo real**, validando o fluxo completo entre **backend e frontend**.  
+Essa etapa consolida o comportamento colaborativo do sistema e encerra a integração total da stack full-stack.
 
 ---
 
@@ -631,11 +476,11 @@ Durante os testes de QA, foram executados:
 
 ### ⏱️ Tempo Gasto por Dia (estimativa)
 
-> **Observação:** Os **Dias 1 e 2** foram dedicados exclusivamente a estudo, desenho arquitetural e planejamento. Os **Dias 3 a 12** seguem exatamente o plano descrito em `Implementation-checklist.md` (Dias 1 a 10 do desafio).
+> **Observação:** Os **Dias 1 e 2** foram dedicados exclusivamente a estudo, desenho arquitetural e planejamento. Os **Dias 3 a 12** seguem exatamente o plano descrito em [Implementation-checklist.md](Implementation-checklist.md) (Dias 1 a 10 do desafio).
 
 | Dia       | Objetivo principal                                                                   |    Tempo |
 | --------- | ------------------------------------------------------------------------------------ | -------: |
-| 1         | Estudo inicial do domínio, levantamento de requisitos e análise do desafio           |       8h |
+| 1         | Estudo inicial do domínio, levantamento de requisitos e análise do desafio           |      15h |
 | 2         | Planejamento detalhado da arquitetura, fluxos e definição das milestones             |       9h |
 | 3         | (Checklist Dia 1) Setup do monorepo, Docker Compose e validação da infra             |      10h |
 | 4         | (Checklist Dia 2) Auth Service – cadastro/login/refresh com Nest + TypeORM           |      10h |
@@ -647,7 +492,7 @@ Durante os testes de QA, foram executados:
 | 10        | (Checklist Dia 8) Frontend – lista/detalhe de tarefas e seção de comentários         |      10h |
 | 11        | (Checklist Dia 9) Frontend – UX, notificações em tempo real e toasts                 |       9h |
 | 12        | (Checklist Dia 10) Testes finais, QA end-to-end e ajustes de documentação            |       8h |
-| **Total** | —                                                                                    | **111h** |
+| **Total** | —                                                                                    | **118h** |
 
 ---
 
@@ -684,20 +529,6 @@ As portas expostas (`5432`, `15672`, `3000`, `3001`) confirmam o mapeamento corr
 - **Validações agressivas:** erros 400 antecipam falhas de negócio e evitam 500 genéricos
 - **Swagger:** substitui Postman e documenta automaticamente os endpoints
 
-### 🩺 Health Checks internos via rede Docker
-
-```bash
-/app # wget -qO- http://tasks-service:3003/health
-{"status":"ok","service":"tasks-service","timestamp":"2025-11-04T16:58:21.105Z"}
-/app # wget -qO- http://notifications-service:3004/health
-{"status":"ok","service":"notifications-service","timestamp":"2025-11-04T16:58:21.110Z"}
-
-
-## 🧩 MCP Servers (Context7)
+### 🧩 MCP Servers (Context7)
 
 Este projeto utiliza MCP (Model Context Protocol) na configuração do IDE/agent para melhorar a produtividade durante o desenvolvimento.
-
-- Servidores habilitados: `filesystem` e `context7`.
-- O `context7` permite consultar documentação de bibliotecas (por nome/versão e tópico) diretamente no editor/agent, sem sair do fluxo de trabalho.
-- Configuração: veja `.codex/config.toml`
-```
