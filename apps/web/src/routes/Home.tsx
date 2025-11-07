@@ -9,8 +9,7 @@ import {
   CheckCircle2,
   ListTodo,
 } from 'lucide-react';
-import { getRelativeTime } from '../lib/time';
-import { getPriorityColor, formatDueDate } from '../features/tasks/utils';
+import { getRelativeTime, isSameDayISO } from '../lib/time';
 import { useHomeViewModel } from '../features/home/useHomeViewModel';
 
 export const HomePage: React.FC = () => {
@@ -92,8 +91,17 @@ export const HomePage: React.FC = () => {
             <TrendingUp className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-gaming font-bold text-foreground">Atividade Recente</h2>
           </div>
+          <p className="text-xs text-foreground/50 mb-3">
+            Últimas 24h (criações), concluídas hoje e notificações
+          </p>
           {recentActivity.length > 0 ? (
-            <div className="space-y-3">
+            <div
+              className={`space-y-3 ${
+                recentActivity.length > 3
+                  ? 'max-h-56 overflow-y-auto pr-1 -mr-1 thin-scrollbar'
+                  : ''
+              }`}
+            >
               {recentActivity.map((activity, idx) => {
                 const Icon =
                   activity.type === 'task_completed'
@@ -107,6 +115,18 @@ export const HomePage: React.FC = () => {
                     : activity.type === 'task_created'
                       ? 'text-blue-500'
                       : 'text-primary';
+                const label =
+                  activity.type === 'task_completed'
+                    ? 'CONCLUÍDA HOJE'
+                    : activity.type === 'task_created'
+                      ? 'CRIADA (24h)'
+                      : 'NOTIFICAÇÃO';
+                const labelClasses =
+                  activity.type === 'task_completed'
+                    ? 'bg-green-500/20 text-green-500 border-green-500/40'
+                    : activity.type === 'task_created'
+                      ? 'bg-blue-500/20 text-blue-500 border-blue-500/40'
+                      : 'bg-primary/20 text-primary border-primary/40';
 
                 return (
                   <div
@@ -115,6 +135,13 @@ export const HomePage: React.FC = () => {
                   >
                     <Icon className={`w-4 h-4 ${iconColor} mt-1 flex-shrink-0`} />
                     <div className="flex-1 min-w-0">
+                      <div className="mb-1">
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${labelClasses}`}
+                        >
+                          {label}
+                        </span>
+                      </div>
                       <p className="text-sm text-foreground/90 line-clamp-2">{activity.message}</p>
                       <p className="text-xs text-foreground/50 mt-1">
                         {getRelativeTime(activity.time)}
@@ -137,63 +164,162 @@ export const HomePage: React.FC = () => {
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle className="w-5 h-5 text-orange-500" />
             <h2 className="text-xl font-gaming font-bold text-foreground">Requer Atenção</h2>
+
             {urgentTasks.length > 0 && (
               <span className="ml-auto text-xs bg-orange-500/20 text-orange-500 px-2 py-1 rounded-full font-medium">
                 {urgentTasks.length}
               </span>
             )}
           </div>
+          <p className="text-xs text-foreground/50 mb-3">
+            Urgentes, Alta com prazo até amanhã, ou suas com prazo hoje
+          </p>
           {urgentTasks.length > 0 ? (
-            <div className="space-y-3">
-              {urgentTasks.map((task) => {
-                const isMyTask = task.assigneeIds.includes(user?.id || '');
-                const assigneeNames = task.assigneeIds
-                  .map((id) => usersById.get(id)?.username || id.slice(0, 8))
-                  .slice(0, 2);
+            <>
+              <div
+                className={`space-y-3 ${
+                  urgentTasks.length > 3 ? 'max-h-72 overflow-y-auto pr-1 -mr-1 thin-scrollbar' : ''
+                }`}
+              >
+                {urgentTasks.map((task) => {
+                  const currentUserId = user?.id || '';
+                  const isMyTask = task.assigneeIds.includes(currentUserId);
+                  const assignedByMe = task.lastAssignedById === currentUserId && !isMyTask;
 
-                return (
-                  <Link
-                    key={task.id}
-                    to="/tasks/$id"
-                    params={{ id: task.id }}
-                    className="block p-3 rounded-lg bg-background/50 hover:bg-background/70 transition-colors group border border-transparent hover:border-primary/30"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className={`text-lg ${getPriorityColor(task.priority)}`}>●</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-2">
-                          <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1 flex-1">
+                  const assigneeNames = task.assigneeIds
+                    .map((id) => usersById.get(id)?.username || id.slice(0, 8))
+                    .slice(0, 2);
+
+                  const otherAssignee = task.assigneeIds.find((id) => id !== currentUserId);
+                  const otherAssigneeName = otherAssignee
+                    ? usersById.get(otherAssignee)?.username || otherAssignee.slice(0, 8)
+                    : undefined;
+
+                  const lastAssignedByName =
+                    task.lastAssignedByUsername ||
+                    (task.lastAssignedById
+                      ? usersById.get(task.lastAssignedById)?.username ||
+                        task.lastAssignedById.slice(0, 8)
+                      : undefined);
+
+                  const badge = isMyTask
+                    ? {
+                        text: 'PARA VOCÊ',
+                        classes: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
+                      }
+                    : assignedByMe
+                      ? {
+                          text: 'AGUARDANDO',
+                          classes: 'bg-orange-500/20 text-orange-400 border-orange-500/40',
+                        }
+                      : null;
+
+                  // Motivo pelo qual a tarefa aparece em "Requer Atenção"
+                  const now = new Date();
+                  const tomorrow = new Date(now);
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  let reason: { text: string; classes: string } | null = null;
+                  if (task.priority === 'URGENT') {
+                    reason = {
+                      text: 'Urgente',
+                      classes: 'bg-red-500/20 text-red-400 border-red-500/40',
+                    };
+                  } else if (
+                    task.priority === 'HIGH' &&
+                    task.dueDate &&
+                    new Date(task.dueDate) <= tomorrow
+                  ) {
+                    reason = {
+                      text: 'Alta • Vence até amanhã',
+                      classes: 'bg-orange-500/20 text-orange-400 border-orange-500/40',
+                    };
+                  } else if (isMyTask && task.dueDate && isSameDayISO(task.dueDate, now)) {
+                    reason = {
+                      text: 'Prazo hoje',
+                      classes: 'bg-violet-500/20 text-violet-400 border-violet-500/40',
+                    };
+                  }
+
+                  const cardClasses =
+                    'block p-3 rounded-lg transition-colors group border ' +
+                    (isMyTask
+                      ? 'bg-blue-500/10 border-blue-500/30 hover:border-blue-500/50'
+                      : assignedByMe
+                        ? 'bg-orange-500/10 border-orange-500/30 hover:border-orange-500/50'
+                        : 'bg-background/50 border-border hover:bg-background/70 hover:border-primary/30');
+                  const dotColor = isMyTask ? 'text-blue-500' : 'text-orange-500';
+
+                  return (
+                    <Link
+                      key={task.id}
+                      to="/tasks/$id"
+                      params={{ id: task.id }}
+                      state={{ from: 'home' }}
+                      className={cardClasses}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className={`text-lg ${dotColor}`}>●</span>
+                        <div className="flex-1 min-w-0">
+                          {/* Badges */}
+                          {(badge || reason) && (
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              {badge && (
+                                <div
+                                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${badge.classes}`}
+                                >
+                                  {isMyTask ? '📌' : '⏳'} {badge.text}
+                                </div>
+                              )}
+                              {reason && (
+                                <div
+                                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${reason.classes}`}
+                                >
+                                  {reason.text}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {/* Title */}
+                          <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                             {task.title}
                           </p>
-                          {isMyTask && (
-                            <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full flex-shrink-0">
-                              Sua
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mt-1 flex-wrap">
-                          <span className="text-xs text-foreground/50 uppercase">
-                            {task.priority}
-                          </span>
-                          {task.dueDate && (
-                            <span className="flex items-center gap-1 text-xs text-foreground/50">
-                              <Clock className="w-3 h-3" />
-                              {formatDueDate(task.dueDate)}
-                            </span>
-                          )}
-                          {assigneeNames.length > 0 && (
-                            <span className="text-xs text-foreground/50">
-                              👤 {assigneeNames.join(', ')}
-                              {task.assigneeIds.length > 2 && ` +${task.assigneeIds.length - 2}`}
-                            </span>
-                          )}
+                          {/* Meta */}
+                          <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            {isMyTask && lastAssignedByName && (
+                              <span className="text-xs text-foreground/60">
+                                De: {lastAssignedByName}
+                              </span>
+                            )}
+                            {assignedByMe && otherAssigneeName && (
+                              <span className="text-xs text-foreground/60">
+                                Para: {otherAssigneeName}
+                              </span>
+                            )}
+                            {task.dueDate && (
+                              <span className="flex items-center gap-1 text-xs text-foreground/50">
+                                <Clock className="w-3 h-3" />
+                                {getRelativeTime(task.dueDate)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+                    </Link>
+                  );
+                })}
+              </div>
+              {/* Legend (fora da área rolável) */}
+              <div className="flex items-center gap-6 pt-2 text-[11px] text-foreground/60">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-blue-500" /> Atribuída a
+                  você
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-orange-500" /> Atribuída a
+                  outra pessoa
+                </span>
+              </div>
+            </>
           ) : (
             <div className="text-center py-8 text-foreground/50">
               <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-30" />
