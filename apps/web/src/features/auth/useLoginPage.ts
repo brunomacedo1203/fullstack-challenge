@@ -2,23 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { login } from './auth.api';
 import { useAuthStore } from './store';
+import type { LoginFormValues } from './forms/loginForm';
 
 export function useLoginPage() {
   const navigate = useNavigate();
   const setTokens = useAuthStore((s) => s.setTokens);
   const isAuthenticated = useAuthStore((s) => !!s.accessToken);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault();
+  // Novo: submissão tipada via react-hook-form + zod
+  const submitValues = async (values: LoginFormValues) => {
     setError(null);
     setLoading(true);
     try {
-      const tokens = await login({ email, password });
+      const tokens = await login(values);
       setTokens(tokens.accessToken, tokens.refreshToken);
       navigate({ to: '/', replace: true });
     } catch (err: any) {
@@ -35,12 +34,8 @@ export function useLoginPage() {
   }, [isAuthenticated, navigate]);
 
   return {
-    email,
-    setEmail,
-    password,
-    setPassword,
     loading,
     error,
-    handleSubmit,
+    submitValues,
   } as const;
 }

@@ -1,12 +1,20 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { useLoginPage } from '../features/auth/useLoginPage';
+import { loginFormSchema, type LoginFormValues } from '../features/auth/forms/loginForm';
 
 export const LoginPage: React.FC = () => {
-  const { email, setEmail, password, setPassword, loading, error, handleSubmit } = useLoginPage();
+  const { loading, error, submitValues } = useLoginPage();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({ resolver: zodResolver(loginFormSchema) });
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
@@ -16,37 +24,33 @@ export const LoginPage: React.FC = () => {
           <p className="text-foreground/70 text-sm text-center mb-8">
             Acesse sua conta Jungle Tasks
           </p>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(submitValues)} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-              />
+              <Input id="email" type="email" placeholder="seu@email.com" {...register('email')} />
+              {errors.email && (
+                <p className="text-sm text-red-400 mt-1 font-medium">{errors.email.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                required
-                minLength={6}
+                {...register('password')}
               />
+              {errors.password && (
+                <p className="text-sm text-red-400 mt-1 font-medium">{errors.password.message}</p>
+              )}
             </div>
             {error && (
               <div className="bg-red-500/20 border-2 border-red-500/50 rounded-lg p-3">
                 <p className="text-red-400 text-sm font-medium">{error}</p>
               </div>
             )}
-            <Button type="submit" disabled={loading} className="w-full" size="lg">
-              {loading ? 'Entrando...' : 'Entrar'}
+            <Button type="submit" disabled={loading || isSubmitting} className="w-full" size="lg">
+              {loading || isSubmitting ? 'Entrando...' : 'Entrar'}
             </Button>
             <p className="text-sm text-foreground/70 text-center">
               Não tem conta?{' '}
