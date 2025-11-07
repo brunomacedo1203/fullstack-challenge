@@ -40,9 +40,9 @@ export const CommentsSection: React.FC<Props> = ({ taskId }) => {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-medium">Comentários</h3>
+      <h3 className="font-gaming font-bold text-xl text-primary">Comentários</h3>
 
-      <div className="rounded-md border p-3 space-y-2">
+      <div className="rounded-xl border-2 border-border bg-gaming-light/50 backdrop-blur-sm p-4 space-y-3 shadow-xl">
         <Textarea
           placeholder="Escreva um comentário..."
           value={content}
@@ -52,39 +52,40 @@ export const CommentsSection: React.FC<Props> = ({ taskId }) => {
           <Button
             disabled={!content.trim() || mutation.isPending}
             onClick={() => mutation.mutate()}
+            variant="secondary"
           >
             {mutation.isPending ? 'Enviando...' : 'Enviar'}
           </Button>
         </div>
       </div>
 
-      <div className="rounded-md border divide-y">
+      <div className="rounded-xl border-2 border-border bg-gaming-light/30 backdrop-blur-sm divide-y divide-border shadow-xl">
         {isLoading || isFetching ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="p-3">
+            <div key={i} className="p-4">
               <Skeleton className="h-4 w-48 mb-2" />
               <Skeleton className="h-4 w-80" />
             </div>
           ))
         ) : isError ? (
-          <div className="p-3 text-sm text-red-600">Erro ao carregar comentários.</div>
+          <div className="p-4 text-sm text-red-400 font-medium">Erro ao carregar comentários.</div>
         ) : !data || (data as any).data.length === 0 ? (
-          <div className="p-3 text-sm text-gray-600">Sem comentários ainda.</div>
+          <div className="p-4 text-sm text-foreground/70 text-center">Sem comentários ainda.</div>
         ) : (
           (data as any).data.map((c: any) => (
-            <div key={c.id} className="p-3">
-              <div className="text-xs text-gray-500 mb-1">
+            <div key={c.id} className="p-4 hover:bg-gaming-light/30 transition-colors">
+              <div className="text-xs text-foreground/60 mb-2 font-medium">
                 {c.authorId ? `Autor: ${c.authorId.slice(0, 8)}` : 'Autor: —'} •{' '}
                 {new Date(c.createdAt).toLocaleString()}
               </div>
-              <div className="text-sm whitespace-pre-wrap">{c.content}</div>
+              <div className="text-sm text-foreground whitespace-pre-wrap">{c.content}</div>
             </div>
           ))
         )}
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-foreground/70 font-medium">
           Página {(data as any)?.page ?? page} de{' '}
           {data
             ? Math.max(1, Math.ceil(((data as any).total ?? 0) / ((data as any).size ?? 10)))

@@ -113,6 +113,28 @@ export class TasksController {
     return this.tasksProxy.createComment(id, body, req.headers.authorization, userId);
   }
 
+  @Get(':id/history')
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Página (default 1)',
+    schema: { type: 'integer', minimum: 1, example: 1 },
+  })
+  @ApiQuery({
+    name: 'size',
+    required: false,
+    description: 'Itens por página (default 10, max 100)',
+    schema: { type: 'integer', minimum: 1, maximum: 100, example: 10 },
+  })
+  listHistory(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Query() query: ListCommentsQueryDto,
+    @Req() req: Request,
+  ): Promise<unknown> {
+    const userId = this.extractUserId(req);
+    return this.tasksProxy.listHistory(id, query, req.headers.authorization, userId);
+  }
+
   private extractUserId(req: Request): string | undefined {
     const payload = req.user as JwtPayload | undefined;
     return payload?.sub;

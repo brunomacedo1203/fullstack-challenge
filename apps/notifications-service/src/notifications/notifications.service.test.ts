@@ -45,7 +45,7 @@ test('handleTaskCreated stores participants and notifies assignees (excludes act
   assert.equal(upsert.mock.calls.length, 1);
 });
 
-test('handleTaskUpdated notifies assignees and creator, excluding actor', async () => {
+test('handleTaskUpdated notifies participants on status change (excludes actor)', async () => {
   const notificationsRepo = repo<Notification>();
   const findOne = mock.fn(async () => ({
     taskId: 'task-1',
@@ -62,8 +62,8 @@ test('handleTaskUpdated notifies assignees and creator, excluding actor', async 
     occurredAt: new Date().toISOString(),
     actorId: 'user-A',
     payload: {
-      changedFields: { title: { from: 'a', to: 'b' } },
-      status: 'TODO',
+      changedFields: { status: { from: 'TODO', to: 'IN_PROGRESS' } },
+      status: 'IN_PROGRESS',
       priority: 'MEDIUM',
       dueDate: null,
       assigneeIds: ['user-B'],
@@ -72,6 +72,64 @@ test('handleTaskUpdated notifies assignees and creator, excluding actor', async 
 
   const recipients = await service.handleTaskUpdated(event);
   assert.deepEqual(new Set(recipients), new Set(['user-B']));
+});
+
+test('handleTaskUpdated does not notify when only non-relevant fields change', async () => {
+  const notificationsRepo = repo<Notification>();
+  const findOne = mock.fn(async () => ({
+    taskId: 'task-1',
+    creatorId: 'user-A',
+    assigneeIds: ['user-B'],
+  }));
+  const participantsRepo = repo<TaskParticipants>({ findOne });
+
+  const service = new NotificationsService(notificationsRepo, participantsRepo);
+
+  const event: TaskUpdatedEvent = {
+    type: 'task.updated',
+    taskId: 'task-1',
+    occurredAt: new Date().toISOString(),
+    actorId: 'user-A',
+    payload: {
+      changedFields: { title: { from: 'a', to: 'b' }, description: { from: 'x', to: 'y' } },
+      status: 'TODO',
+      priority: 'MEDIUM',
+      dueDate: null,
+      assigneeIds: ['user-B'],
+    },
+  };
+
+  const recipients = await service.handleTaskUpdated(event);
+  assert.deepEqual(recipients, []);
+});
+
+test('handleTaskUpdated notifies only newly added assignees', async () => {
+  const notificationsRepo = repo<Notification>();
+  const findOne = mock.fn(async () => ({
+    taskId: 'task-1',
+    creatorId: 'user-A',
+    assigneeIds: ['user-B'],
+  }));
+  const participantsRepo = repo<TaskParticipants>({ findOne });
+
+  const service = new NotificationsService(notificationsRepo, participantsRepo);
+
+  const event: TaskUpdatedEvent = {
+    type: 'task.updated',
+    taskId: 'task-1',
+    occurredAt: new Date().toISOString(),
+    actorId: 'user-A',
+    payload: {
+      changedFields: { assigneeIds: { from: ['user-B'], to: ['user-B', 'user-C'] } },
+      status: 'TODO',
+      priority: 'MEDIUM',
+      dueDate: null,
+      assigneeIds: ['user-B', 'user-C'],
+    },
+  };
+
+  const recipients = await service.handleTaskUpdated(event);
+  assert.deepEqual(new Set(recipients), new Set(['user-C']));
 });
 
 test('handleTaskCommentCreated notifies participants except author and actor', async () => {

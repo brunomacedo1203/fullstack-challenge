@@ -53,6 +53,15 @@ export class TasksProxyService {
     return this.forward('post', `/tasks/${taskId}/comments`, { body, authorization, userId });
   }
 
+  listHistory(
+    taskId: string,
+    params: unknown,
+    authorization?: string,
+    userId?: string,
+  ): Promise<unknown> {
+    return this.forward('get', `/tasks/${taskId}/history`, { params, authorization, userId });
+  }
+
   private async forward(
     method: 'get' | 'post' | 'put' | 'delete',
     path: string,

@@ -414,36 +414,36 @@ _Checkpoint:_ Backend emite notificações em tempo real e sincroniza pendentes 
 ### 🔹 Fases & Subtasks
 
 1. **Fase 1 — Revisão final do monorepo**
-   - [ ] Validar `.env.example` de todos os apps.
-   - [ ] `turbo run build` por app (ou filtro).
-   - [ ] Atualizar dependências críticas se necessário.
+   - [x] Validar `.env.example` de todos os apps.
+   - [x] `turbo run build` por app (ou filtro).
+   - [x] Atualizar dependências críticas se necessário.
    - **Commit:** `chore: review envs and validate monorepo builds`
 
    _Checkpoint:_ Todos os pacotes buildam sem erros; envs de exemplo conferidos.
 
 2. **Fase 2 — README final**
-   - [ ] Diagrama ASCII da arquitetura:
+   - [x] Diagrama ASCII da arquitetura:
      ```
      [web] → [api-gateway] → [auth | tasks | notifications] → RabbitMQ → Postgres
      ```
-   - [ ] Decisões técnicas (JWT, WS, Query, rate-limit, CORS).
-   - [ ] Instruções de execução, endpoints e URLs.
+   - [x] Decisões técnicas (JWT, WS, Query, rate-limit, CORS).
+   - [x] Instruções de execução, endpoints e URLs.
    - **Commit:** `docs: finalize README with architecture and instructions`
 
    _Checkpoint:_ README completo, claro e suficiente para rodar o projeto do zero.
 
 3. **Fase 3 — Teste de entrega**
-   - [ ] `docker compose up --build`.
-   - [ ] Fluxo completo: Login → Criar Tarefa → Comentar → Notificação (front recebe toast).
-   - [ ] Validar rate-limit, CORS e migrations automáticas.
+   - [x] `docker compose up --build`.
+   - [x] Fluxo completo: Login → Criar Tarefa → Comentar → Notificação (front recebe toast).
+   - [x] Validar rate-limit, CORS e migrations automáticas.
    - **Commit:** `chore: final e2e validation and delivery`
 
    _Checkpoint:_ Ambiente sobe limpo via Docker; fluxo E2E passa sem ajustes manuais.
 
 4. **Fase 4 — Apresentação e limpeza**
-   - [ ] Remover logs/comentários temporários.
-   - [ ] (Opcional) Vídeo curto de demo.
-   - [ ] Tag final:
+   - [x] Remover logs/comentários temporários.
+   - [x] (Opcional) Vídeo curto de demo.
+   - [x] Tag final:
      ```bash
      git tag -a v1.0.0 -m "Full-stack challenge completed"
      git push origin v1.0.0

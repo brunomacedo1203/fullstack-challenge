@@ -17,6 +17,10 @@ export type Task = {
   createdAt: string; // ISO
   updatedAt: string; // ISO
   assigneeIds: UUID[];
+  // Optional metadata provided by backend to indicate the last assignment actor/time
+  lastAssignedById?: UUID;
+  lastAssignedByUsername?: string;
+  lastAssignedAt?: string; // ISO
 };
 
 export type CreateTaskInput = {
@@ -40,4 +44,15 @@ export type Comment = {
 
 export type CreateCommentInput = {
   content: string;
+};
+
+export type TaskHistoryEventType = 'TASK_CREATED' | 'TASK_UPDATED' | 'COMMENT_CREATED';
+
+export type TaskHistory = {
+  id: UUID;
+  taskId: UUID;
+  actorId?: UUID | null;
+  type: TaskHistoryEventType;
+  payload?: Record<string, unknown> | null;
+  createdAt: string; // ISO
 };

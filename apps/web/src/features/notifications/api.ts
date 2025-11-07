@@ -1,27 +1,21 @@
 import { useAuthStore } from '../../features/auth/store';
 import type { NotificationItem } from './types';
 
-function getHttpBaseFromWs(wsUrl?: string): string {
-  if (!wsUrl) return '';
-  try {
-    const u = new URL(wsUrl);
-    const protocol = u.protocol === 'wss:' ? 'https:' : 'http:';
-    return `${protocol}//${u.host}`;
-  } catch {
-    return '';
-  }
-}
-
 function getNotificationsHttpBase(): string {
-  const envWs = (import.meta as any).env?.VITE_WS_URL as string | undefined;
-  const inferred = getHttpBaseFromWs(envWs);
-  if (inferred) return inferred;
+  const envApi = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined; // e.g., http://...:3001/api
   if (typeof window !== 'undefined') {
     const proto = window.location.protocol;
     const host = window.location.hostname;
-    return `${proto}//${host}:3004`;
+    if (envApi) {
+      // If env points to docker-internal host, rewrite to current host
+      if (envApi.includes('api-gateway') && host !== 'api-gateway') {
+        return `${proto}//${host}:3001/api`;
+      }
+      return envApi.replace(/\/$/, '');
+    }
+    return `${proto}//${host}:3001/api`;
   }
-  return 'http://localhost:3004';
+  return (envApi && envApi.replace(/\/$/, '')) || 'http://localhost:3001/api';
 }
 
 export async function fetchUnreadNotifications(size = 10): Promise<NotificationItem[]> {

@@ -49,41 +49,65 @@ export class NotificationsService {
   }
 
   async handleTaskUpdated(event: TaskUpdatedEvent): Promise<string[]> {
-    const assignees = this.normalizeIds(event.payload.assigneeIds);
+    const nextAssignees = this.normalizeIds(event.payload.assigneeIds);
     const existing = await this.participantsRepo.findOne({ where: { taskId: event.taskId } });
     const creatorId = existing?.creatorId ?? null;
 
+    // Persist latest participants snapshot
     await this.participantsRepo.upsert(
       {
         taskId: event.taskId,
         creatorId,
-        assigneeIds: assignees,
+        assigneeIds: nextAssignees,
       },
       ['taskId'],
     );
 
-    const recipients = new Set(assignees);
-    if (creatorId) {
-      recipients.add(creatorId);
+    // Determine which changes should trigger notifications
+    const changedFields = event.payload.changedFields ?? {};
+    const hasStatusChange = Object.prototype.hasOwnProperty.call(changedFields, 'status');
+
+    let addedAssignees: string[] = [];
+    if (Object.prototype.hasOwnProperty.call(changedFields, 'assigneeIds')) {
+      const from = this.normalizeIds(
+        (changedFields as any).assigneeIds?.from ?? existing?.assigneeIds ?? [],
+      );
+      const to = this.normalizeIds((changedFields as any).assigneeIds?.to ?? nextAssignees);
+      const fromSet = new Set(from);
+      addedAssignees = to.filter((id) => !fromSet.has(id));
     }
-    if (event.actorId) {
-      recipients.delete(event.actorId);
+
+    // Build recipients set according to business rules
+    const recipients = new Set<string>();
+    if (hasStatusChange) {
+      nextAssignees.forEach((id) => recipients.add(id));
+      if (creatorId) recipients.add(creatorId);
     }
+    // Notify only newly added assignees on assignment changes
+    for (const id of addedAssignees) recipients.add(id);
+
+    // Exclude actor to avoid self-notifications
+    if (event.actorId) recipients.delete(event.actorId);
 
     if (recipients.size === 0) {
       return [];
     }
 
-    const changed = Object.keys(event.payload.changedFields).join(', ') || 'campos';
-    const notifications = Array.from(recipients).map((recipientId) =>
-      this.notificationsRepo.create({
+    const addedSet = new Set(addedAssignees);
+    const notifications = Array.from(recipients).map((recipientId) => {
+      const isAssignment = addedSet.has(recipientId);
+      const title = isAssignment ? 'Tarefa atribuída' : 'Tarefa atualizada';
+      const body = isAssignment
+        ? 'Você foi atribuído(a) a esta tarefa.'
+        : `Status alterado para ${String(event.payload.status)}.`;
+      return this.notificationsRepo.create({
         recipientId,
         type: event.type,
         taskId: event.taskId,
-        title: 'Tarefa atualizada',
-        body: `Alterações em ${changed}.`,
-      }),
-    );
+        title,
+        body,
+      });
+    });
 
     await this.notificationsRepo.save(notifications);
     return Array.from(recipients);

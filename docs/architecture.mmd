@@ -1,0 +1,74 @@
+%%{init: {"theme":"default","themeVariables":{"fontSize":"16px","fontFamily":"Inter, Arial, sans-serif","primaryTextColor":"#111","lineColor":"#374151","tertiaryColor":"#eef2ff"},"flowchart":{"htmlLabels":true,"curve":"basis","nodeSpacing":100,"rankSpacing":100}}}%%
+flowchart TB
+  %% Cliente
+  subgraph Client["🌐 Camada de Apresentação"]
+    direction LR
+    web["<b>Web Client</b><br/>React + Vite<br/>TanStack Query<br/>Zustand"]
+  end
+
+  %% Gateway
+  subgraph Gateway["⚡ API Gateway"]
+    gw["<b>NestJS Gateway</b><br/>:3000<br/>━━━━━━━━━━<br/>• Rate Limiting<br/>• JWT Validation<br/>• Request Routing"]
+  end
+
+  %% Serviços
+  subgraph Services["🔷 Microserviços (NestJS)"]
+    direction TB
+    
+    subgraph AuthService["Serviço de Autenticação"]
+      auth["<b>Auth Service</b><br/>:3001<br/>━━━━━━━━━━<br/>• Login/Register<br/>• JWT Tokens<br/>• User Management"]
+    end
+    
+    subgraph TasksService["Serviço de Tarefas"]
+      tasks["<b>Tasks Service</b><br/>:3002<br/>━━━━━━━━━━<br/>• CRUD Tarefas<br/>• Validação<br/>• Event Publisher"]
+    end
+    
+    subgraph NotifsService["Serviço de Notificações"]
+      notifs["<b>Notifications Service</b><br/>:3003<br/>━━━━━━━━━━<br/>• WebSocket Server<br/>• Event Consumer<br/>• Push Notifications"]
+    end
+  end
+
+  %% Infraestrutura
+  subgraph Infra["💾 Camada de Dados"]
+    direction LR
+    db[("<b>PostgreSQL</b><br/>:5432<br/>━━━━━━━━━━<br/>• users<br/>• tasks<br/>• notifications")]
+    mq[("<b>RabbitMQ</b><br/>:5672<br/>━━━━━━━━━━<br/><i>Exchange:</i> tasks.events<br/><i>Routing:</i> task.#<br/><i>Queue:</i> notifications")]
+  end
+
+  %% Conexões Cliente -> Gateway
+  web -->|"① HTTP/HTTPS<br/>Authorization: Bearer JWT"| gw
+  web <-.->|"⑥ WebSocket<br/>Real-time updates"| notifs
+
+  %% Conexões Gateway -> Serviços
+  gw -->|"② HTTP + JWT<br/>/api/auth/**"| auth
+  gw -->|"③ HTTP + JWT<br/>/api/tasks/**"| tasks
+  gw -->|"④ HTTP + JWT<br/>/api/notifications/**"| notifs
+
+  %% Serviços -> Banco de Dados
+  auth -->|"SQL Queries"| db
+  tasks -->|"SQL Queries"| db
+  notifs -->|"SQL Queries"| db
+
+  %% Message Queue
+  tasks -.->|"⑤ AMQP Publish<br/>task.created<br/>task.updated<br/>task.deleted"| mq
+  mq -.->|"AMQP Consume<br/>Auto-ack"| notifs
+
+  %% Legenda
+  subgraph Legend["📋 Legenda"]
+    direction LR
+    sync["━━ Síncrono (HTTP)"]
+    async["┄┄ Assíncrono (AMQP/WS)"]
+  end
+
+  %% Styling
+  classDef gateway fill:#e0e7ff,stroke:#4f46e5,color:#111,stroke-width:2px;
+  classDef service fill:#cffafe,stroke:#0e7490,color:#111,stroke-width:2px;
+  classDef infra fill:#fef3c7,stroke:#d97706,color:#111,stroke-width:2px;
+  classDef client fill:#dcfce7,stroke:#16a34a,color:#111,stroke-width:2px;
+  classDef legend fill:#f3f4f6,stroke:#6b7280,color:#111,stroke-width:1px;
+
+  class gw gateway;
+  class auth,tasks,notifs service;
+  class db,mq infra;
+  class web client;
+  class sync,async legend;

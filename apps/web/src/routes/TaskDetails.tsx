@@ -1,207 +1,76 @@
-import React, { useMemo } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams, useRouter } from '@tanstack/react-router';
-import { deleteTask, getTask, updateTask } from '../features/tasks/tasks.api';
-import type { Task, UpdateTaskInput } from '../features/tasks/types';
-import { Skeleton } from '../components/Skeleton';
-import { Button } from '../components/ui/button';
-import { Label } from '../components/ui/label';
-import { Input } from '../components/ui/input';
-import { Select } from '../components/ui/select';
-import { Textarea } from '../components/ui/textarea';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useToast } from '../components/ui/toast';
+import React from 'react';
 import { CommentsSection } from '../components/CommentsSection';
-
-const editTaskSchema = z.object({
-  title: z.string().min(1).max(255),
-  description: z.string().optional(),
-  dueDate: z.string().optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE']),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
-  assigneeIds: z.string().optional(),
-});
-type EditTaskForm = z.infer<typeof editTaskSchema>;
+import { HistorySection } from '../components/HistorySection';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { TaskDetailsLoading } from '../components/tasks/TaskDetailsLoading';
+import { TaskDetailsError } from '../components/tasks/TaskDetailsError';
+import { TaskHeader } from '../components/tasks/TaskHeader';
+import { TaskEditForm } from '../components/tasks/TaskEditForm';
+import { useTaskDetailsPage } from '../features/tasks/useTaskDetailsPage';
 
 export const TaskDetailsPage: React.FC = () => {
-  const { id } = useParams({ from: '/tasks/$id' });
-  const { show } = useToast();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-
   const {
-    data: task,
+    task,
     isLoading,
     isError,
-  } = useQuery({
-    queryKey: ['task', id],
-    queryFn: () => getTask(id),
-  });
-
-  const {
+    usersData,
+    isLoadingUsers,
+    isErrorUsers,
+    canEdit,
+    currentUserId,
     register,
     handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<EditTaskForm>({
-    resolver: zodResolver(editTaskSchema),
-    values: useMemo<EditTaskForm | undefined>(() => {
-      if (!task) return undefined;
-      return {
-        title: task.title,
-        description: task.description ?? '',
-        dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
-        status: task.status,
-        priority: task.priority,
-        assigneeIds: task.assigneeIds.join(', '),
-      };
-    }, [task]),
-  });
+    errors,
+    isDirty,
+    setValue,
+    assigneeInputValue,
+    confirmLeaveOpen,
+    setConfirmLeaveOpen,
+    saveMutation,
+    isAssignedToMe,
+    handleBack,
+    onSubmit,
+  } = useTaskDetailsPage();
 
-  const saveMutation = useMutation({
-    mutationFn: (values: EditTaskForm) => {
-      const payload: UpdateTaskInput = {
-        title: values.title,
-        description: values.description || undefined,
-        dueDate: values.dueDate || undefined,
-        status: values.status,
-        priority: values.priority,
-        assigneeIds: values.assigneeIds
-          ? values.assigneeIds
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : [],
-      };
-      return updateTask(id, payload);
-    },
-    onSuccess: async () => {
-      show('Tarefa atualizada!', { type: 'success' });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['task', id] }),
-        queryClient.invalidateQueries({ queryKey: ['tasks'] }),
-      ]);
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? 'Não foi possível atualizar';
-      show(String(msg), { type: 'error' });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteTask(id),
-    onSuccess: async () => {
-      show('Tarefa excluída', { type: 'success' });
-      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      router.navigate({ to: '/tasks' });
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? 'Falha ao excluir';
-      show(String(msg), { type: 'error' });
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
-  }
-
-  if (isError || !task) {
-    return (
-      <div>
-        <p className="text-red-600">Erro ao carregar tarefa.</p>
-        <Link to="/tasks" className="underline">
-          Voltar
-        </Link>
-      </div>
-    );
-  }
+  if (isLoading) return <TaskDetailsLoading />;
+  if (isError || !task) return <TaskDetailsError />;
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{task.title}</h1>
-          <p className="text-sm text-gray-500">
-            Criada em {new Date(task.createdAt).toLocaleString()}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              reset();
-              show('Campos resetados', { type: 'info' });
-            }}
-          >
-            Resetar
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-8 p-4">
+      <TaskHeader task={task} isAssignedToMe={isAssignedToMe} onBackClick={handleBack} />
 
-      <form
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
-        onSubmit={handleSubmit((values) => saveMutation.mutate(values))}
-      >
-        <div className="md:col-span-2">
-          <Label htmlFor="title">Título</Label>
-          <Input id="title" {...register('title')} />
-          {errors.title && <p className="text-sm text-red-600">{errors.title.message}</p>}
-        </div>
-        <div className="md:col-span-2">
-          <Label htmlFor="description">Descrição</Label>
-          <Textarea id="description" rows={4} {...register('description')} />
-        </div>
-        <div>
-          <Label htmlFor="dueDate">Data limite (YYYY-MM-DD)</Label>
-          <Input id="dueDate" {...register('dueDate')} />
-        </div>
-        <div>
-          <Label>Status</Label>
-          <Select {...register('status')} defaultValue={task.status}>
-            <option value="TODO">TODO</option>
-            <option value="IN_PROGRESS">IN_PROGRESS</option>
-            <option value="REVIEW">REVIEW</option>
-            <option value="DONE">DONE</option>
-          </Select>
-        </div>
-        <div>
-          <Label>Prioridade</Label>
-          <Select {...register('priority')} defaultValue={task.priority}>
-            <option value="LOW">LOW</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="HIGH">HIGH</option>
-            <option value="URGENT">URGENT</option>
-          </Select>
-        </div>
-        <div className="md:col-span-2">
-          <Label>Assignees (IDs separados por vírgula)</Label>
-          <Input {...register('assigneeIds')} />
-          <p className="text-xs text-gray-500 mt-1">
-            Atual: {task.assigneeIds.length} atribuído(s).
-          </p>
-        </div>
-        <div className="md:col-span-2 flex justify-end gap-3">
-          <Button type="submit" disabled={saveMutation.isPending}>
-            {saveMutation.isPending ? 'Salvando...' : 'Salvar alterações'}
-          </Button>
-        </div>
-      </form>
+      <TaskEditForm
+        task={task}
+        canEdit={canEdit}
+        users={usersData}
+        isLoadingUsers={isLoadingUsers}
+        isErrorUsers={isErrorUsers}
+        currentUserId={currentUserId}
+        register={register}
+        handleSubmit={handleSubmit}
+        errors={errors}
+        isDirty={isDirty}
+        setValue={setValue}
+        assigneeInputValue={assigneeInputValue}
+        isSubmitting={saveMutation.isPending}
+        onSubmit={onSubmit}
+      />
 
       <CommentsSection taskId={task.id} />
+      <HistorySection taskId={task.id} />
+
+      <ConfirmDialog
+        open={confirmLeaveOpen}
+        title="Descartar alterações?"
+        description="Você tem alterações não salvas. Deseja descartá-las e voltar à página anterior?"
+        cancelText="Permanecer aqui"
+        confirmText="Descartar e voltar"
+        onCancel={() => setConfirmLeaveOpen(false)}
+        onConfirm={() => {
+          setConfirmLeaveOpen(false);
+          handleBack();
+        }}
+      />
     </div>
   );
 };

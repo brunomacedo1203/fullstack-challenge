@@ -44,6 +44,15 @@ export type CommentResponse = {
   createdAt: Date;
 };
 
+export type TaskHistoryResponse = {
+  id: string;
+  taskId: string;
+  actorId?: string | null;
+  type: TaskHistoryEventType;
+  payload?: Record<string, unknown> | null;
+  createdAt: Date;
+};
+
 type TaskSnapshot = {
   title: string;
   description: string | null;
@@ -58,6 +67,7 @@ export class TasksService {
   constructor(
     @InjectRepository(Task) private readonly tasksRepo: Repository<Task>,
     @InjectRepository(Comment) private readonly commentsRepo: Repository<Comment>,
+    @InjectRepository(TaskHistory) private readonly historyRepo: Repository<TaskHistory>,
     private readonly eventsPublisher: TasksEventsPublisher,
   ) {}
 
@@ -263,6 +273,35 @@ export class TasksService {
     );
 
     return this.toCommentResponse(comment);
+  }
+
+  async listHistory(
+    taskId: string,
+    query: ListCommentsQueryDto,
+  ): Promise<Paginated<TaskHistoryResponse>> {
+    await this.ensureTaskExists(taskId);
+
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const size = query.size && query.size > 0 ? Math.min(query.size, 100) : 10;
+    const skip = (page - 1) * size;
+
+    const [rows, total] = await this.historyRepo.findAndCount({
+      where: { taskId },
+      order: { createdAt: 'DESC' },
+      skip,
+      take: size,
+    });
+
+    const data: TaskHistoryResponse[] = rows.map((h) => ({
+      id: h.id,
+      taskId: h.taskId,
+      actorId: h.actorId ?? null,
+      type: h.type,
+      payload: h.payload ?? null,
+      createdAt: h.createdAt,
+    }));
+
+    return { data, page, size, total };
   }
 
   private toTaskResponse(task: Task & { assignees?: TaskAssignee[] }): TaskResponse {
