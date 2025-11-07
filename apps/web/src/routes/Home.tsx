@@ -1,10 +1,4 @@
-import React, { useMemo } from 'react';
-import { useAuthStore } from '../features/auth/store';
-import { useAuthGuard } from '../hooks/useAuthGuard';
-import { useQuery } from '@tanstack/react-query';
-import { listTasks } from '../features/tasks/tasks.api';
-import { listUsers } from '../features/users/users.api';
-import { useNotificationsStore } from '../features/notifications/store';
+import React from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   Bell,
@@ -15,180 +9,12 @@ import {
   CheckCircle2,
   ListTodo,
 } from 'lucide-react';
-import { getRelativeTime, isSameDayISO } from '../lib/time';
+import { getRelativeTime } from '../lib/time';
 import { getPriorityColor, formatDueDate } from '../features/tasks/utils';
+import { useHomeViewModel } from '../features/home/useHomeViewModel';
 
 export const HomePage: React.FC = () => {
-  useAuthGuard();
-  const user = useAuthStore((s) => s.user);
-  const notifications = useNotificationsStore((s) => s.items);
-  const unreadCount = notifications.length;
-
-  const { data } = useQuery({
-    queryKey: ['home_tasks_preview'],
-    queryFn: () => listTasks({ page: 1, size: 100 }),
-    staleTime: 30_000,
-  });
-
-  const { data: usersData } = useQuery({
-    queryKey: ['users'],
-    queryFn: listUsers,
-    staleTime: 60_000,
-  });
-
-  const usersById = useMemo(() => {
-    const m = new Map();
-    for (const u of usersData ?? []) m.set(u.id, u);
-    return m;
-  }, [usersData]);
-
-  // MELHORADO: Subtítulo mais contextual
-  const subtitle = useMemo(() => {
-    const tasks = data?.data ?? [];
-    const today = new Date();
-    const currentUserId = user?.id;
-
-    const myTasksToday = tasks.filter(
-      (t) =>
-        t.assigneeIds.includes(currentUserId || '') &&
-        (t.status === 'TODO' || t.status === 'IN_PROGRESS') &&
-        isSameDayISO(t.dueDate ?? undefined, today),
-    ).length;
-
-    const completedThisWeek = tasks.filter((t) => {
-      if (t.status !== 'DONE') return false;
-      if (!t.updatedAt) return false;
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return new Date(t.updatedAt) >= weekAgo;
-    }).length;
-
-    if (unreadCount > 0) {
-      return `${unreadCount} nova${unreadCount > 1 ? 's' : ''} notificaç${
-        unreadCount > 1 ? 'ões' : 'ão'
-      } desde sua última visita`;
-    }
-    if (myTasksToday > 0) {
-      return `Você tem ${myTasksToday} tarefa${myTasksToday > 1 ? 's' : ''} atribuída${
-        myTasksToday > 1 ? 's' : ''
-      } para hoje`;
-    }
-    if (completedThisWeek > 0) {
-      return `${completedThisWeek} tarefa${completedThisWeek > 1 ? 's concluídas' : ' concluída'} esta semana 🎉`;
-    }
-    return 'Tudo em dia! Hora de pegar novas tarefas 💪';
-  }, [data, unreadCount, user?.id]);
-
-  const counters = useMemo(() => {
-    const tasks = data?.data ?? [];
-    const currentUserId = user?.id;
-
-    return tasks.reduce(
-      (acc, t) => {
-        // Total geral
-        if (t.status === 'TODO') acc.todo += 1;
-        if (t.status === 'IN_PROGRESS') acc.inProgress += 1;
-        if (t.status === 'DONE') acc.done += 1;
-
-        // Minhas tarefas
-        if (t.assigneeIds.includes(currentUserId || '')) {
-          if (t.status === 'TODO') acc.myTodo += 1;
-          if (t.status === 'IN_PROGRESS') acc.myInProgress += 1;
-        }
-
-        return acc;
-      },
-      { todo: 0, inProgress: 0, done: 0, myTodo: 0, myInProgress: 0 },
-    );
-  }, [data, user?.id]);
-
-  const urgentTasks = useMemo(() => {
-    const tasks = data?.data ?? [];
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const currentUserId = user?.id;
-
-    return tasks
-      .filter((t) => {
-        if (t.status === 'DONE') return false;
-        // MELHORADO: Priorizar tarefas atribuídas ao usuário
-        const isMyTask = t.assigneeIds.includes(currentUserId || '');
-        if (t.priority === 'URGENT') return true;
-        if (t.priority === 'HIGH' && t.dueDate) {
-          const due = new Date(t.dueDate);
-          return due <= tomorrow;
-        }
-        // Incluir minhas tarefas que vencem hoje, mesmo que não sejam URGENT
-        if (isMyTask && t.dueDate) {
-          const due = new Date(t.dueDate);
-          return isSameDayISO(t.dueDate, now);
-        }
-        return false;
-      })
-      .sort((a, b) => {
-        // Minhas tarefas primeiro
-        const aIsMine = a.assigneeIds.includes(currentUserId || '');
-        const bIsMine = b.assigneeIds.includes(currentUserId || '');
-        if (aIsMine && !bIsMine) return -1;
-        if (!aIsMine && bIsMine) return 1;
-
-        // Depois por prioridade
-        const priorityOrder = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
-        return priorityOrder[a.priority] - priorityOrder[b.priority];
-      })
-      .slice(0, 5);
-  }, [data, user?.id]);
-
-  // NOVO: Atividade recente mais útil
-  const recentActivity = useMemo(() => {
-    const tasks = data?.data ?? [];
-    const activities: Array<{ message: string; time: string; type: string }> = [];
-
-    // Tarefas criadas nas últimas 24h
-    const dayAgo = new Date();
-    dayAgo.setDate(dayAgo.getDate() - 1);
-
-    tasks
-      .filter((t) => new Date(t.createdAt) >= dayAgo)
-      .slice(0, 3)
-      .forEach((t) => {
-        activities.push({
-          message: `Nova tarefa criada: ${t.title}`,
-          time: t.createdAt,
-          type: 'task_created',
-        });
-      });
-
-    // Tarefas concluídas hoje
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    tasks
-      .filter((t) => t.status === 'DONE' && t.updatedAt && new Date(t.updatedAt) >= today)
-      .slice(0, 3)
-      .forEach((t) => {
-        activities.push({
-          message: `Tarefa concluída: ${t.title}`,
-          time: t.updatedAt || t.createdAt,
-          type: 'task_completed',
-        });
-      });
-
-    // Adicionar notificações
-    notifications.slice(0, 2).forEach((n) => {
-      activities.push({
-        message: n.body || n.title || 'Notificação',
-        time: n.createdAt || new Date().toISOString(),
-        type: 'notification',
-      });
-    });
-
-    // Ordenar por data e pegar as 5 mais recentes
-    return activities
-      .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-      .slice(0, 5);
-  }, [data, notifications]);
+  const { user, usersById, subtitle, counters, urgentTasks, recentActivity } = useHomeViewModel();
 
   return (
     <div className="min-h-[calc(100vh-4rem)] py-8 px-4 max-w-7xl mx-auto">
@@ -200,7 +26,7 @@ export const HomePage: React.FC = () => {
         <p className="text-foreground/70 text-lg">{subtitle}</p>
       </div>
 
-      {/* MELHORADO: Status Cards Clicáveis */}
+      {/* Status Cards Clicáveis */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <Link
           to="/tasks"
@@ -260,7 +86,7 @@ export const HomePage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* MELHORADO: Atividade Recente */}
+        {/* Atividade Recente */}
         <div className="rounded-xl border-2 border-border bg-gaming-light/40 p-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-primary" />
@@ -306,7 +132,7 @@ export const HomePage: React.FC = () => {
           )}
         </div>
 
-        {/* MELHORADO: Tarefas Urgentes com Responsáveis */}
+        {/*Tarefas Urgentes com Responsáveis */}
         <div className="rounded-xl border-2 border-border bg-gaming-light/40 p-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle className="w-5 h-5 text-orange-500" />
