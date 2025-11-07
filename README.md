@@ -593,21 +593,19 @@ Nesta etapa o frontend passou a receber **notificações em tempo real** via Web
 
 ---
 
-### 🖼️ **Figura 18 – Toast em tempo real**
-
 ![Figura 18 – Toast em tempo real](./docs/images/day-09/fig-18-realtime-toast.png)
+
+Ao criar ou atualizar uma tarefa em outra sessão, o usuário autenticado recebe **toasts instantâneos** por meio do canal WebSocket.  
+Esse comportamento confirma o disparo dos eventos `task:created`, `task:updated` e `comment:new` consumidos pelo frontend.
 
 ---
 
-### 🖼️ **Figura 19 – Dropdown de notificações**
+### 🖼️ **Figura 19 – Centro de notificações (Dia 9)**
 
 ![Figura 19 – Dropdown de notificações](./docs/images/day-09/fig-19-notification-dropdown.png)
 
----
-
-### 🖼️ **Figura 20 – Frames do WebSocket (DevTools)**
-
-![Figura 20 – Frames do WebSocket](./docs/images/day-09/fig-20-ws-frames.png)
+O **centro de notificações** exibe o histórico das últimas interações em tempo real, com contador (“badge”) de não lidas sincronizado via Zustand.  
+Cada item traz título, resumo e horário do evento, reforçando a integração entre **Notifications Service**, **API Gateway** e **frontend React**.
 
 ---
 
@@ -628,6 +626,38 @@ Durante os testes de QA, foram executados:
 - 🧩 **Fluxo E2E completo** — Login → Criação de tarefa → Comentário → Notificação em tempo real → Sincronização via WebSocket.
 - 🐇 **Mensageria RabbitMQ validada** — eventos publicados no exchange `tasks.events` e consumidos por `notifications.q`.
 - 🌐 **Frontend e Gateway** — conectados corretamente, exibindo toasts, badges e lista de notificações atualizadas em tempo real.
+
+---
+
+### ⏱️ Tempo Gasto por Dia (estimativa)
+
+> **Observação:** Os **Dias 1 e 2** foram dedicados exclusivamente a estudo, desenho arquitetural e planejamento. Os **Dias 3 a 12** seguem exatamente o plano descrito em `Implementation-checklist.md` (Dias 1 a 10 do desafio).
+
+| Dia       | Objetivo principal                                                                   |    Tempo |
+| --------- | ------------------------------------------------------------------------------------ | -------: |
+| 1         | Estudo inicial do domínio, levantamento de requisitos e análise do desafio           |       8h |
+| 2         | Planejamento detalhado da arquitetura, fluxos e definição das milestones             |       9h |
+| 3         | (Checklist Dia 1) Setup do monorepo, Docker Compose e validação da infra             |      10h |
+| 4         | (Checklist Dia 2) Auth Service – cadastro/login/refresh com Nest + TypeORM           |      10h |
+| 5         | (Checklist Dia 3) API Gateway – proxies, Swagger, JWT guard e rate limiting          |       9h |
+| 6         | (Checklist Dia 4) Tasks Service – CRUD completo, migrations e integração via Gateway |      10h |
+| 7         | (Checklist Dia 5) Tasks events – comentários, histórico e publicação no RabbitMQ     |       9h |
+| 8         | (Checklist Dia 6) Notifications Service – consumer RabbitMQ + WebSocket gateway      |      10h |
+| 9         | (Checklist Dia 7) Frontend – setup Vite/React, autenticação e Zustand                |       9h |
+| 10        | (Checklist Dia 8) Frontend – lista/detalhe de tarefas e seção de comentários         |      10h |
+| 11        | (Checklist Dia 9) Frontend – UX, notificações em tempo real e toasts                 |       9h |
+| 12        | (Checklist Dia 10) Testes finais, QA end-to-end e ajustes de documentação            |       8h |
+| **Total** | —                                                                                    | **111h** |
+
+---
+
+## 🚧 Problemas conhecidos & Melhorias (prioridade frontend)
+
+1. Internacionalização (i18n) básica: suportar pt-BR/en-US e formatação local (datas/números).
+2. Acessibilidade (A11y) em dropdowns e modal: ARIA, foco por teclado, fechar com Esc e focus-trap.
+3. Filtros persistentes + paginação visível: sincronizar filtros na URL e adicionar Anterior/Próxima na lista.
+4. Responsividade da lista (mobile): exibir “cards” ou ocultar colunas não essenciais em telas pequenas.
+5. Implementação de um sistema de autorização de modo que usuários autorizados tenham privilégios(admin, manager...) para gerenciar tarefas.
 
 ---
 
