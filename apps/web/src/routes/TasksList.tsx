@@ -1,79 +1,38 @@
-import React, { useMemo, useState } from 'react';
-import { useQuery, useQueryClient, useMutation, keepPreviousData } from '@tanstack/react-query';
-import { listTasks, createTask } from '../features/tasks/tasks.api';
-import type { Task, CreateTaskInput } from '../features/tasks/types';
+import React from 'react';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/Skeleton';
 import { Link } from '@tanstack/react-router';
 import TasksFilters from '../components/tasks/TasksFilters';
 import CreateTaskForm from '../components/tasks/CreateTaskForm';
-import { useToast } from '../components/ui/toast';
-import { useAuthStore } from '../features/auth/store';
-import { listUsers, type UserSummary } from '../features/users/users.api';
 import { statusToPt, priorityToPt } from '../features/tasks/utils';
+import { useTasksListPage } from '../features/tasks/useTasksListPage';
 
 export const TasksListPage: React.FC = () => {
-  const [page, setPage] = useState(1);
-  const [size] = useState(10);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [priorityFilter, setPriorityFilter] = useState<string>('');
-  const [showCreate, setShowCreate] = useState(false);
-  const queryClient = useQueryClient();
-  const { show } = useToast();
-
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['tasks', { page, size }],
-    queryFn: () => listTasks({ page, size }),
-    staleTime: 15_000,
-    placeholderData: keepPreviousData,
-  });
-
-  const tasks = data?.data ?? [];
-
   const {
-    data: usersData,
-    isLoading: isLoadingUsers,
-    isError: isErrorUsers,
-  } = useQuery({
-    queryKey: ['users'],
-    queryFn: listUsers,
-    staleTime: 60_000,
-  });
-
-  const filtered = useMemo(() => {
-    let list: Task[] = tasks;
-    if (search.trim()) {
-      const s = search.trim().toLowerCase();
-      list = list.filter(
-        (t) => t.title.toLowerCase().includes(s) || (t.description ?? '').toLowerCase().includes(s),
-      );
-    }
-    if (statusFilter) list = list.filter((t) => t.status === statusFilter);
-    if (priorityFilter) list = list.filter((t) => t.priority === priorityFilter);
-    return list;
-  }, [tasks, search, statusFilter, priorityFilter]);
-
-  const usersById = useMemo(() => {
-    const m = new Map<string, UserSummary>();
-    for (const u of usersData ?? []) m.set(u.id, u);
-    return m;
-  }, [usersData]);
-
-  const createMutation = useMutation({
-    mutationFn: (input: CreateTaskInput) => createTask(input),
-    onSuccess: async () => {
-      show('Tarefa criada com sucesso!', { type: 'success' });
-      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      refetch();
-      setShowCreate(false);
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? 'Falha ao criar tarefa';
-      show(String(msg), { type: 'error' });
-    },
-  });
-  const currentUserId = useAuthStore((state) => state.user?.id ?? null);
+    page,
+    setPage,
+    size,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
+    showCreate,
+    setShowCreate,
+    data,
+    isLoading,
+    isError,
+    isFetching,
+    filtered,
+    usersById,
+    usersData,
+    isLoadingUsers,
+    isErrorUsers,
+    createMutation,
+    handleCreate,
+    currentUserId,
+  } = useTasksListPage();
 
   return (
     <div className="space-y-6 p-4 max-w-6xl mx-auto">
@@ -92,7 +51,7 @@ export const TasksListPage: React.FC = () => {
             currentUserId={currentUserId}
             isSubmitting={createMutation.isPending}
             onCancel={() => setShowCreate(false)}
-            onCreate={(input) => createMutation.mutate(input)}
+            onCreate={handleCreate}
           />
         </div>
       )}
@@ -110,7 +69,6 @@ export const TasksListPage: React.FC = () => {
         <table className="min-w-full divide-y divide-border">
           <thead className="bg-gaming-light/80">
             <tr>
-              {/* MUDANÇA: "Título" virou "Tarefa" */}
               <th className="px-4 py-3 text-left text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Tarefa
               </th>
@@ -126,8 +84,6 @@ export const TasksListPage: React.FC = () => {
               <th className="px-4 py-3 text-center text-xs font-gaming font-bold uppercase tracking-wider text-primary">
                 Responsáveis
               </th>
-              {/* REMOVIDO: Coluna "Atribuída por" */}
-              {/* REMOVIDO: Coluna extra sem título */}
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -157,31 +113,26 @@ export const TasksListPage: React.FC = () => {
               ))
             ) : isError ? (
               <tr>
-                {/* MUDANÇA: colSpan de 7 para 6 */}
                 <td className="px-4 py-6 text-sm text-red-400 font-medium" colSpan={6}>
                   Erro ao carregar tarefas.
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                {/* MUDANÇA: colSpan de 7 para 6 */}
                 <td className="px-4 py-6 text-sm text-foreground/70" colSpan={6}>
                   Nenhuma tarefa encontrada.
                 </td>
               </tr>
             ) : (
               filtered.map((t) => {
-                // NOVO: Verificar se é atribuída ao usuário atual
                 const isAssignedToMe = t.assigneeIds.includes(currentUserId || '');
 
-                // NOVO: Mapear IDs para nomes
                 const assigneeNames = t.assigneeIds
                   .map((id) => usersById.get(id)?.username || id.slice(0, 8))
                   .filter(Boolean);
 
                 return (
                   <tr key={t.id} className="hover:bg-gaming-light/50 transition-colors">
-                    {/* MUDANÇA PRINCIPAL: Coluna expandida com subtítulo */}
                     <td className="px-4 py-3">
                       <div className="space-y-1">
                         <Link
@@ -196,10 +147,8 @@ export const TasksListPage: React.FC = () => {
                             {t.description}
                           </div>
                         )}
-                        {/* NOVO: Subtítulo com metadados (igual ao TaskDetailsPage) */}
                         <div className="text-xs text-foreground/50 flex items-center gap-2 flex-wrap">
                           <span>Criada em {new Date(t.createdAt).toLocaleDateString('pt-BR')}</span>
-                          {/* Mostra quem atribuiu, destacando se foi atribuída ao usuário atual */}
                           {isAssignedToMe && t.lastAssignedByUsername && (
                             <>
                               <span>•</span>
@@ -218,26 +167,22 @@ export const TasksListPage: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* Status com badge visual */}
                     <td className="px-4 py-3">
                       <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
                         {statusToPt(t.status)}
                       </span>
                     </td>
 
-                    {/* Prioridade com badge visual */}
                     <td className="px-4 py-3">
                       <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/20 text-accent border border-accent/30">
                         {priorityToPt(t.priority)}
                       </span>
                     </td>
 
-                    {/* Vencimento */}
                     <td className="px-4 py-3 text-base text-foreground/80">
                       {t.dueDate ? new Date(t.dueDate).toLocaleDateString('pt-BR') : '—'}
                     </td>
 
-                    {/* NOVO: Responsáveis com chips ao invés de só número */}
                     <td className="px-4 py-3">
                       {assigneeNames.length === 0 ? (
                         <span className="text-foreground/50 text-sm">Não atribuída</span>
@@ -264,10 +209,6 @@ export const TasksListPage: React.FC = () => {
                       )}
                     </td>
 
-                    {/* REMOVIDO: Coluna "Atribuída por" */}
-                    {/* REMOVIDO: Coluna com AssignedToMeByCell */}
-
-                    {/* Ações */}
                     <td className="px-4 py-3 text-right">
                       <Link to="/tasks/$id" params={{ id: t.id }}>
                         <Button variant="outline" size="sm">

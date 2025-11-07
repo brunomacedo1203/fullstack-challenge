@@ -7,7 +7,7 @@ import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
 import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
-import AssigneesPicker from '../../components/AssigneesPicker';
+import AssigneesPicker from './AssigneesPicker';
 import type { UserSummary } from '../../features/users/users.api';
 import type { CreateTaskInput } from '../../features/tasks/types';
 
