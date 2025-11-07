@@ -1,0 +1,140 @@
+<svg viewBox="0 0 800 900" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="900" fill="#0a0a0a"/>
+  
+  <!-- Title -->
+  <text x="400" y="40" font-family="monospace" font-size="20" fill="#ffffff" text-anchor="middle" font-weight="bold">
+    Jungle Gaming — Arquitetura Full-Stack
+  </text>
+  
+  <!-- Web Layer -->
+  <rect x="150" y="80" width="500" height="70" fill="none" stroke="#4ade80" stroke-width="2"/>
+  <text x="400" y="110" font-family="monospace" font-size="14" fill="#ffffff" text-anchor="middle">
+    Web (React + Vite + TanStack + Zustand)
+  </text>
+  <text x="400" y="130" font-family="monospace" font-size="11" fill="#9ca3af" text-anchor="middle">
+    Interface frontend com autenticação JWT
+  </text>
+  
+  <!-- Arrow down -->
+  <line x1="400" y1="150" x2="400" y2="200" stroke="#4ade80" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="420" y="180" font-family="monospace" font-size="10" fill="#9ca3af">HTTP (JWT)</text>
+  
+  <!-- API Gateway -->
+  <rect x="250" y="200" width="300" height="70" fill="none" stroke="#facc15" stroke-width="2"/>
+  <text x="400" y="230" font-family="monospace" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">
+    API Gateway
+  </text>
+  <text x="400" y="250" font-family="monospace" font-size="11" fill="#9ca3af" text-anchor="middle">
+    auth, validação, roteamento
+  </text>
+  
+  <!-- Arrow down to services -->
+  <line x1="400" y1="270" x2="400" y2="320" stroke="#facc15" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="420" y="300" font-family="monospace" font-size="10" fill="#9ca3af">HTTP interno</text>
+  
+  <!-- Horizontal line for services distribution -->
+  <line x1="150" y1="320" x2="650" y2="320" stroke="#facc15" stroke-width="1" stroke-dasharray="5,5"/>
+  
+  <!-- Auth Service -->
+  <rect x="50" y="340" width="200" height="80" fill="none" stroke="#60a5fa" stroke-width="2"/>
+  <text x="150" y="370" font-family="monospace" font-size="13" fill="#ffffff" text-anchor="middle" font-weight="bold">
+    Auth Service
+  </text>
+  <text x="150" y="390" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    JWT &amp; Users
+  </text>
+  <text x="150" y="405" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    HTTP interno
+  </text>
+  
+  <!-- Tasks Service -->
+  <rect x="300" y="340" width="200" height="80" fill="none" stroke="#60a5fa" stroke-width="2"/>
+  <text x="400" y="370" font-family="monospace" font-size="13" fill="#ffffff" text-anchor="middle" font-weight="bold">
+    Tasks Service
+  </text>
+  <text x="400" y="390" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    CRUD + Assignees
+  </text>
+  <text x="400" y="405" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    HTTP (JWT)
+  </text>
+  
+  <!-- Notifications Service -->
+  <rect x="550" y="340" width="200" height="80" fill="none" stroke="#60a5fa" stroke-width="2"/>
+  <text x="650" y="370" font-family="monospace" font-size="13" fill="#ffffff" text-anchor="middle" font-weight="bold">
+    Notifications
+  </text>
+  <text x="650" y="390" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    WebSocket + HTTP
+  </text>
+  <text x="650" y="405" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    real-time push
+  </text>
+  
+  <!-- Arrows from Gateway to Services -->
+  <line x1="300" y1="320" x2="150" y2="340" stroke="#facc15" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="320" x2="400" y2="340" stroke="#facc15" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <line x1="500" y1="320" x2="650" y2="340" stroke="#facc15" stroke-width="1" marker-end="url(#arrowhead)"/>
+  
+  <!-- RabbitMQ -->
+  <rect x="475" y="480" width="200" height="70" fill="none" stroke="#f97316" stroke-width="2"/>
+  <text x="575" y="510" font-family="monospace" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">
+    RabbitMQ
+  </text>
+  <text x="575" y="530" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    Message Broker
+  </text>
+  
+  <!-- Tasks Service publishes to RabbitMQ -->
+  <line x1="400" y1="420" x2="475" y2="500" stroke="#f97316" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="420" y="460" font-family="monospace" font-size="10" fill="#f97316">publica eventos</text>
+  
+  <!-- RabbitMQ to Notifications (consume) -->
+  <line x1="625" y1="480" x2="650" y2="420" stroke="#f97316" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="680" y="450" font-family="monospace" font-size="10" fill="#f97316">consome</text>
+  
+  <!-- PostgreSQL -->
+  <rect x="150" y="640" width="500" height="100" fill="none" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="400" y="670" font-family="monospace" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">
+    PostgreSQL
+  </text>
+  <text x="400" y="690" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    users, tasks, comments, task_history,
+  </text>
+  <text x="400" y="705" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    notifications, task_participants, task_assignees
+  </text>
+  <text x="400" y="725" font-family="monospace" font-size="10" fill="#9ca3af" text-anchor="middle">
+    Banco relacional (persistência)
+  </text>
+  
+  <!-- Services to PostgreSQL -->
+  <line x1="150" y1="420" x2="250" y2="640" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="420" x2="400" y2="640" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="650" y1="420" x2="550" y2="640" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Legend -->
+  <text x="50" y="800" font-family="monospace" font-size="12" fill="#9ca3af" font-weight="bold">Legenda:</text>
+  <line x1="50" y1="820" x2="100" y2="820" stroke="#4ade80" stroke-width="2"/>
+  <text x="110" y="825" font-family="monospace" font-size="10" fill="#9ca3af">Frontend (React)</text>
+  
+  <line x1="50" y1="840" x2="100" y2="840" stroke="#facc15" stroke-width="2"/>
+  <text x="110" y="845" font-family="monospace" font-size="10" fill="#9ca3af">API Gateway (routing)</text>
+  
+  <line x1="50" y1="860" x2="100" y2="860" stroke="#60a5fa" stroke-width="2"/>
+  <text x="110" y="865" font-family="monospace" font-size="10" fill="#9ca3af">Microserviços (NestJS)</text>
+  
+  <line x1="300" y1="820" x2="350" y2="820" stroke="#f97316" stroke-width="2"/>
+  <text x="360" y="825" font-family="monospace" font-size="10" fill="#9ca3af">RabbitMQ (eventos)</text>
+  
+  <line x1="300" y1="840" x2="350" y2="840" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="360" y="845" font-family="monospace" font-size="10" fill="#9ca3af">PostgreSQL (persistência)</text>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#ffffff" />
+    </marker>
+  </defs>
+</svg>
